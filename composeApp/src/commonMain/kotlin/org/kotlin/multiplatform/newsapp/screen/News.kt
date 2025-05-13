@@ -1,5 +1,6 @@
 package org.kotlin.multiplatform.newsapp.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,44 +8,72 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Divider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import newskotlinproject.composeapp.generated.resources.Res
 import newskotlinproject.composeapp.generated.resources.ic_bookmark
+import newskotlinproject.composeapp.generated.resources.ic_comments
+import newskotlinproject.composeapp.generated.resources.ic_fill_bookmark
+import newskotlinproject.composeapp.generated.resources.ic_fill_like
 import newskotlinproject.composeapp.generated.resources.ic_logout
 import newskotlinproject.composeapp.generated.resources.ic_news
+import newskotlinproject.composeapp.generated.resources.ic_send
+import newskotlinproject.composeapp.generated.resources.ic_unfill_bookmark
+import newskotlinproject.composeapp.generated.resources.ic_unfill_like
+import newskotlinproject.composeapp.generated.resources.ic_user
 import org.jetbrains.compose.resources.painterResource
+import org.kotlin.multiplatform.newsapp.model.Comment
 import org.kotlin.multiplatform.newsapp.model.NewsPost
 import org.kotlin.multiplatform.newsapp.model.ResultState
 import org.kotlin.multiplatform.newsapp.openLink
@@ -52,6 +81,7 @@ import org.kotlin.multiplatform.newsapp.utils.SessionUtil
 import org.kotlin.multiplatform.newsapp.utils.formatDateOnly
 import org.kotlin.multiplatform.newsapp.utils.getTimeAgo
 import org.kotlin.multiplatform.newsapp.viewmodel.NewsViewmodel
+import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -164,15 +194,153 @@ fun NewsScreen(
 
     }
 }
+//@Composable
+//fun NewsItem(
+//    news: NewsPost,
+//    newsViewmodel: NewsViewmodel,
+//    isBookMarkScreen: Boolean,
+//    navController: NavController
+//) {
+//    val timeAgo = remember(news.createdAt) {
+//        getTimeAgo(news.createdAt)
+//    }
+//    val formattedDate = formatDateOnly(news.createdAt)
+//    val isBookmarked = newsViewmodel.isBookmarked(news.id)
+//
+//    Card(
+//        modifier = Modifier
+//            .padding(8.dp)
+//            .fillMaxWidth()
+//            .clickable {
+//                navController.navigate("news/detail/${news.id}")
+//                println("News List News Id:-->${news.id}")
+//            },
+//        colors = CardDefaults.cardColors(containerColor = Color.White),
+//        shape = RoundedCornerShape(12.dp),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+//    ) {
+//        Column(modifier = Modifier.padding(16.dp)) {
+//
+//            // Top row: Channel name and time ago
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween,
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Text(
+//                    text = news.channelName,
+//                    style = MaterialTheme.typography.titleMedium,
+//                    fontWeight = FontWeight.Bold,
+//                    color = Color.Black
+//                )
+//
+//                Text(
+//                    text = timeAgo,
+//                    style = MaterialTheme.typography.bodySmall,
+//                    color = Color.Gray
+//                )
+//            }
+//
+//            Spacer(modifier = Modifier.height(10.dp))
+//
+//            // Title
+//            Text(
+//                text = news.title,
+//                style = MaterialTheme.typography.titleSmall,
+//                fontWeight = FontWeight.SemiBold,
+//                maxLines = 2,
+//                overflow = TextOverflow.Ellipsis,
+//                color = Color.DarkGray
+//            )
+//
+//            Spacer(modifier = Modifier.height(4.dp))
+//
+//            // Link
+//            Text(
+//                text = news.link,
+//                style = MaterialTheme.typography.bodyMedium.copy(
+//                    color = Color.Blue,
+//                    textDecoration = TextDecoration.Underline
+//                ),
+//                modifier = Modifier.clickable {
+//                    openLink(news.link)
+//                }
+//            )
+//
+//            Spacer(modifier = Modifier.height(8.dp))
+//
+//            // Date
+//            Row(
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Icon(
+//                    painter = painterResource(Res.drawable.ic_news),
+//                    contentDescription = "Calendar",
+//                    tint = Color.Gray,
+//                    modifier = Modifier.size(16.dp)
+//                )
+//
+//                Spacer(modifier = Modifier.width(4.dp))
+//
+//                Text(
+//                    text = formattedDate,
+//                    style = MaterialTheme.typography.bodySmall,
+//                    color = Color.Gray
+//                )
+//                // Bookmark icon at the bottom right
+//                Row(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    horizontalArrangement = Arrangement.End
+//                ) {
+//                    Icon(
+//                        painter = painterResource(
+//                            if (isBookmarked) Res.drawable.ic_fill_bookmark
+//                            else Res.drawable.ic_unfill_bookmark
+//                        ),
+//                        contentDescription = "Bookmark",
+//                        tint = if (isBookmarked) Color.Blue else Color.Gray,
+//                        modifier = Modifier
+//                            .size(32.dp)
+//                            .clickable {
+//                                if (!isBookMarkScreen) {
+//                                    newsViewmodel.toggleBookmark(news)
+//                                }
+//                            }
+//                    )
+//                }
+//            }
+//
+//
+//        }
+//    }
+//}
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewsItem(news: NewsPost,
-             newsViewmodel:NewsViewmodel,
-             isBookMarkScreen:Boolean,
-             navController:NavController) {
-    val timeAgo = remember(news.createdAt) {
-        getTimeAgo(news.createdAt)
+fun NewsItem(
+    news: NewsPost,
+    newsViewmodel: NewsViewmodel,
+    isBookMarkScreen: Boolean,
+    navController: NavController
+) {
+    val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val showBottomSheet = remember { mutableStateOf(false) }
+
+    val commentsState = newsViewmodel.commentsStates[news.id] ?: ResultState.Initial
+    val likeState = newsViewmodel.likeStates[news.id] ?: ResultState.Initial
+    val likeCountState = newsViewmodel.likeCountStates[news.id] ?: ResultState.Initial
+    var commentInput by remember { mutableStateOf("") }
+
+    // Load like count and comments when this composable enters composition
+    LaunchedEffect(news.id) {
+        newsViewmodel.getLikeCount(news.id)
+        newsViewmodel.getComments(news.id)
+        newsViewmodel.getUserLikeStatus(news.id, SessionUtil.getUserId().toString())
+
     }
+
+    val timeAgo = remember(news.createdAt) { getTimeAgo(news.createdAt) }
     val formattedDate = formatDateOnly(news.createdAt)
     val isBookmarked = newsViewmodel.isBookmarked(news.id)
 
@@ -182,85 +350,24 @@ fun NewsItem(news: NewsPost,
             .fillMaxWidth()
             .clickable {
                 navController.navigate("news/detail/${news.id}")
-                println("New List News Id:-->${news.id}")
             },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
-            // Title and Bookmark Row
+            // Top: Channel name and time
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = news.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Icon(
-                    painter = painterResource(Res.drawable.ic_bookmark),
-                    contentDescription = "Bookmark",
-                    tint = if (isBookmarked) Color.Blue else Color.Gray,
-
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .size(20.dp)
-                        .clickable {
-                            if(!isBookMarkScreen) {
-                                newsViewmodel.toggleBookmark(news)
-                            }
-
-
-                        }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Link
-            Text(
-                text = news.link,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Blue,
-                    textDecoration = TextDecoration.Underline
-                ),
-                modifier = Modifier.clickable {
-                    openLink(news.link)
-                }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Date and Time Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_news),
-                    contentDescription = "Calendar",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(16.dp)
-                )
-
-                Spacer(modifier = Modifier.width(4.dp))
-
                 Text(
-                    text = formattedDate,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    text = news.channelName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
                 )
-
-                Spacer(modifier = Modifier.weight(1f))
-
                 Text(
                     text = timeAgo,
                     style = MaterialTheme.typography.bodySmall,
@@ -268,22 +375,350 @@ fun NewsItem(news: NewsPost,
                 )
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = news.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = Color.DarkGray
+            )
+
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Channel name aligned right
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+            Text(
+                text = news.link,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.Blue,
+                    textDecoration = TextDecoration.Underline
+                ),
+                modifier = Modifier.clickable { openLink(news.link) }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Date and Bookmark
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_news),
+                    contentDescription = "Calendar",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = formattedDate,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Icon(
+                    painter = painterResource(
+                        if (isBookmarked) Res.drawable.ic_fill_bookmark else Res.drawable.ic_unfill_bookmark
+                    ),
+                    contentDescription = "Bookmark",
+                    tint = if (isBookmarked) Color.Blue else Color.Gray,
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clickable {
+                            if (!isBookMarkScreen) {
+                                newsViewmodel.toggleBookmark(news)
+                            }
+                        }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Like and Comment Row
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Like Button
+                val isLiked = likeState is ResultState.Success && (likeState ).data
+                println("isLiked:--$isLiked")
+                Icon(
+                    painter = painterResource(
+                        if (isLiked) Res.drawable.ic_fill_like else Res.drawable.ic_unfill_like
+                    ),
+                    contentDescription = "Like",
+                    tint = if (isLiked) Color.Red else Color.Gray,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {
+                            newsViewmodel.toggleLike(news.id, SessionUtil.getUserId().toString())
+                        }
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+
+                // Like count
+                when (likeCountState) {
+                    is ResultState.Success -> Text(
+                        text = "${(likeCountState as ResultState.Success).data}",
+                        color = Color.Black
+                    )
+                    is ResultState.Loading -> CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                    else -> Text("0", color = Color.Black)
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // Comment icon and count
+                Icon(
+                    painter = painterResource(Res.drawable.ic_comments),
+                    contentDescription = "Comments",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {
+                            showBottomSheet.value = true
+                            scope.launch { sheetState.show() }
+                        }
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                if (commentsState is ResultState.Success) {
+                    val count = (commentsState as ResultState.Success).data.size
+                    Text("$count", color = Color.Black)
+                }
+            }
+        }
+    }
+    val listState = rememberLazyListState()
+
+    if (showBottomSheet.value) {
+        ModalBottomSheet(
+            sheetState = sheetState,
+            onDismissRequest = { showBottomSheet.value = false },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            val keyboardController = LocalSoftwareKeyboardController.current
+
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight(0.75f)
+                    .padding(horizontal = 16.dp)
+                    .imePadding()
             ) {
                 Text(
-                    text = news.channelName,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.DarkGray
+                    text = "Comments",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 16.dp)
                 )
+
+                when (commentsState) {
+                    is ResultState.Success -> {
+                        val comments = (commentsState).data
+                        LaunchedEffect(comments.size) {
+                            if (comments.isNotEmpty()) {
+                                listState.animateScrollToItem(comments.lastIndex)
+                            }
+                        }
+                        LazyColumn(
+                            state = listState, // <--- this is crucial
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(bottom = 12.dp)
+                        ) {
+
+
+                            items(comments) { comment ->
+
+                                val isLiked = newsViewmodel.commentLikeStates[comment.id] is ResultState.Success && (newsViewmodel.commentLikeStates[comment.id] as ResultState.Success).data
+                                val likeCount = newsViewmodel.commentLikeCountStates[comment.id] as? ResultState.Success<Int>
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 10.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    // Placeholder avatar
+                                    Image(
+                                        painter = painterResource(Res.drawable.ic_user), // replace with actual avatar
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                    )
+
+                                    Spacer(modifier = Modifier.width(10.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = comment.userName,
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = remember(comment.createdAt) { getTimeAgo(comment.createdAt) }, // optionally format actual timestamp
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = Color.Gray
+                                            )
+                                        }
+
+                                        Text(
+                                            text = comment.content,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+
+                                        // View replies text
+                                    }
+
+                                    // Like button
+                                    IconButton(
+                                        onClick = {
+                                            // Toggle like/unlike
+                                            if (isLiked) {
+                                                newsViewmodel.toggleCommentLike(comment.id, SessionUtil.getUserId().toString())
+                                            } else {
+                                                newsViewmodel.toggleCommentLike(comment.id, SessionUtil.getUserId().toString())
+                                            }
+                                            // Optionally, toggle like state here directly
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                            contentDescription = "Like comment",
+                                            tint = if (isLiked) Color.Red else Color.Gray,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    // Show like count
+                                    likeCount?.let {
+                                        Text(
+                                            text = "${it.data}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.Gray
+                                        )
+                                    }
+//                                    Icon(
+//                                        imageVector = Icons.Default.FavoriteBorder,
+//                                        contentDescription = "Like comment",
+//                                        tint = Color.Gray,
+//                                        modifier = Modifier.size(20.dp)
+//                                    )
+                                }
+                                Divider(color = Color.LightGray)
+                            }
+                        }
+
+                    }
+
+                    is ResultState.Loading -> Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+
+                    is ResultState.Error -> Text("Failed to load comments", color = Color.Red)
+                    else -> {}
+                }
+
+
+
+                // Comment input field
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Placeholder avatar
+
+                    OutlinedTextField(
+                        value = commentInput,
+                        onValueChange = { commentInput = it },
+                        placeholder = { Text("Add a comment...") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.LightGray,
+                            unfocusedBorderColor = Color.LightGray
+                        ),
+                        maxLines = 5,
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(
+                        onClick = {
+                            if (commentInput.isNotBlank()) {
+                                newsViewmodel.postComment(news.id, SessionUtil.getUserId().toString(), commentInput,SessionUtil.getUserName().toString())
+                                commentInput = ""
+                                keyboardController?.hide() // Dismiss keyboard
+                            }
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+//                        Text("GIF") // or replace with an icon
+
+                        Icon(painter = painterResource(Res.drawable.ic_send),contentDescription = "Send")
+                    }
+                }
             }
         }
     }
 
+//    // 🔻 BottomSheet for Comments 🔻
+//    if (showBottomSheet.value) {
+//        ModalBottomSheet(
+//            sheetState = sheetState,
+//            onDismissRequest = { showBottomSheet.value = false }
+//        ) {
+//            Column(modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(16.dp)) {
+//                Text("Comments", style = MaterialTheme.typography.titleMedium)
+//                Spacer(modifier = Modifier.height(8.dp))
+//
+//                when (commentsState) {
+//                    is ResultState.Success -> {
+//                        val comments = (commentsState as ResultState.Success<List<Comment>>).data
+//                        LazyColumn {
+//                            items(comments) { comment ->
+//                                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+//                                    Text("User: ${comment.userId}", fontWeight = FontWeight.Bold)
+//                                    Text(comment.content)
+//                                }
+//                            }
+//                        }
+//                    }
+//                    is ResultState.Loading -> CircularProgressIndicator()
+//                    is ResultState.Error -> Text("Failed to load comments", color = Color.Red)
+//                    else -> {}
+//                }
+//
+//                Spacer(modifier = Modifier.height(12.dp))
+//
+//                OutlinedTextField(
+//                    value = commentInput,
+//                    onValueChange = { commentInput = it },
+//                    modifier = Modifier.fillMaxWidth(),
+//                    placeholder = { Text("Add a comment...") }
+//                )
+//
+//                Button(
+//                    onClick = {
+//                        if (commentInput.isNotBlank()) {
+//                            newsViewmodel.postComment(news.id, SessionUtil.getUserId().toString(), commentInput)
+//                            commentInput = ""
+//                        }
+//                    },
+//                    modifier = Modifier
+//                        .align(Alignment.End)
+//                        .padding(top = 8.dp)
+//                ) {
+//                    Text("Post")
+//                }
+//            }
+//        }
+//    }
 }
-

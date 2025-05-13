@@ -15,6 +15,7 @@ import org.kotlin.multiplatform.newsapp.utils.SessionUtil
 @Composable
 fun SplashScreen(navController: NavController){
     val startDestination = if (SessionUtil.isUserLoggedIn()) "main" else "Login"
+//    val startDestination =  "main"
 
     LaunchedEffect(Unit){
         delay(2000)

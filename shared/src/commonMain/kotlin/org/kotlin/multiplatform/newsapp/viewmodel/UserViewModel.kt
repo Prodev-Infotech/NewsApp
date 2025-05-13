@@ -34,6 +34,7 @@ class UserViewModel : ViewModel() {
                     if (user != null) {
                         _signUpState.value = ResultState.Success(user)
                         SessionUtil.saveUserId(user.id)
+                        SessionUtil.saveUserName(user.name)
                     } else {
                         _signUpState.value = ResultState.Error("User data is null")
                     }
@@ -58,6 +59,7 @@ class UserViewModel : ViewModel() {
                     if (user != null) {
                         _loginState.value = ResultState.Success(user)
                         SessionUtil.saveUserId(user.id)
+                        SessionUtil.saveUserName(user.name)
 
                     } else {
                         _loginState.value = ResultState.Error("User data is null")

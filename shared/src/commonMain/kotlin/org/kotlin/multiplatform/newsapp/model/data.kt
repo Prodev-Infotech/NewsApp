@@ -65,6 +65,15 @@ data class ApiResponse<T>(
     val message: String,
     val data: T? = null
 )
+
+@Serializable
+data class CommentResponse<T>(
+    val status: Boolean,
+    val message: String,
+    val data: List<T>
+)
+@Serializable
+data class LikeCount(val count: Int)
 @Serializable
 data class UserResponse(
     val status: Boolean,
@@ -94,7 +103,32 @@ data class UserNewsResponse(
     val message: String,
     val user: List<UserWithNews>
 )
+@Serializable
+data class CommentRequest(val userId: String, val content: String,val userName: String)
 
+@Serializable
+data class LikeRequest(val userId: String)
+@Serializable
+data class LikeStatusResponse(
+    val liked: Boolean
+)
+
+@Serializable
+data class Comment(
+    val id: String = generateId(),
+    val newsId: String,
+    val userId: String,
+    val userName:String,
+    val content: String,
+    val createdAt: String = getCurrentFormattedDate()
+)
+
+@Serializable
+data class Like(
+    val id: String = generateId(),
+    val newsId: String,
+    val userId: String
+)
 sealed class ResultState<out T> {
     object Initial : ResultState<Nothing>()
     object Loading : ResultState<Nothing>()

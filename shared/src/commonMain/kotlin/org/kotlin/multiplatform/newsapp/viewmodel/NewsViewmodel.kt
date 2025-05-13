@@ -1,10 +1,14 @@
 package org.kotlin.multiplatform.newsapp.viewmodel
 
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import dev.icerock.moko.mvvm.viewmodel.ViewModel
 import io.ktor.utils.io.errors.IOException
 import kotlinx.coroutines.launch
+import org.kotlin.multiplatform.newsapp.model.Comment
+import org.kotlin.multiplatform.newsapp.model.CommentRequest
+import org.kotlin.multiplatform.newsapp.model.LikeRequest
 import org.kotlin.multiplatform.newsapp.model.NewsPost
 import org.kotlin.multiplatform.newsapp.model.ResultState
 import org.kotlin.multiplatform.newsapp.model.User
@@ -135,6 +139,155 @@ class NewsViewmodel: ViewModel(){
         val isBookmarked = bookmarks.value.contains(newsId)
         println("BookmarkCheck Is  Bookmarked: $isBookmarked")
         return isBookmarked
+    }
+
+    private val _commentsStates = mutableStateMapOf<String, ResultState<List<Comment>>>()
+    val commentsStates: Map<String, ResultState<List<Comment>>> get() = _commentsStates
+
+    private val _likeStates = mutableStateMapOf<String, ResultState<Boolean>>()
+    val likeStates: Map<String, ResultState<Boolean>> get() = _likeStates
+
+    private val _likeCountStates = mutableStateMapOf<String, ResultState<Int>>()
+    val likeCountStates: Map<String, ResultState<Int>> get() = _likeCountStates
+
+    fun getComments(newsId: String) {
+        _commentsStates[newsId] = ResultState.Loading
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.getComments(newsId)
+                if (response.status) {
+                    _commentsStates[newsId] = ResultState.Success(response.data)
+                } else {
+                    _commentsStates[newsId] = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _commentsStates[newsId] = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun postComment(newsId: String, userId: String, content: String,userName:String) {
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.postComment(newsId, CommentRequest(userId, content,userName))
+                if (response.status) {
+                    getComments(newsId)
+                }
+            } catch (e: Exception) {
+                println("Post comment error: ${e.message}")
+            }
+        }
+    }
+
+    fun toggleLike(newsId: String, userId: String) {
+        _likeStates[newsId] = ResultState.Loading
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.toggleLike(newsId, LikeRequest(userId))
+                if (response.status) {
+                    _likeStates[newsId] = ResultState.Success(response.data.first().liked)
+                    getLikeCount(newsId)
+                } else {
+                    _likeStates[newsId] = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _likeStates[newsId] = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun getLikeCount(newsId: String) {
+        _likeCountStates[newsId] = ResultState.Loading
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.getLikeCount(newsId)
+                if (response.status) {
+                    _likeCountStates[newsId] = ResultState.Success(response.data.first().count)
+                } else {
+                    _likeCountStates[newsId] = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _likeCountStates[newsId] = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun getUserLikeStatus(newsId: String, userId: String) {
+        _likeStates[newsId] = ResultState.Loading
+        println("idLiked Loading stat3---> ${ResultState.Loading}")
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.getUserLikeStatus(newsId, userId) // Adjust API if needed
+                if (response.status) {
+                    _likeStates[newsId] = ResultState.Success(response.data.first().liked)
+                    println("idLiked---> ${response.data}")
+                } else {
+                    _likeStates[newsId] = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _likeStates[newsId] = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    private val _commentLikeStates = mutableStateMapOf<String, ResultState<Boolean>>()
+    val commentLikeStates: Map<String, ResultState<Boolean>> get() = _commentLikeStates
+
+    private val _commentLikeCountStates = mutableStateMapOf<String, ResultState<Int>>()
+    val commentLikeCountStates: Map<String, ResultState<Int>> get() = _commentLikeCountStates
+
+    fun getCommentLikeStatus(commentId: String, userId: String) {
+        _commentLikeStates[commentId] = ResultState.Loading
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.getUserCommentLikeStatus(commentId, userId)
+                if (response.status) {
+                    val likeStatus = response.data.firstOrNull() // This should give you the first LikeStatusResponse
+                    if (likeStatus != null) {
+                        _commentLikeStates[commentId] = ResultState.Success(likeStatus.liked)
+                    } else {
+                        _commentLikeStates[commentId] = ResultState.Error("No like status available")
+                    }
+                } else {
+                    _commentLikeStates[commentId] = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _commentLikeStates[commentId] = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun toggleCommentLike(commentId: String, userId: String) {
+        _commentLikeStates[commentId] = ResultState.Loading
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.toggleCommentLike(commentId, LikeRequest(userId))
+                if (response.status) {
+                    _commentLikeStates[commentId] = ResultState.Success(response.data.first().liked)
+                    getCommentLikeCount(commentId)
+                } else {
+                    _commentLikeStates[commentId] = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _commentLikeStates[commentId] = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun getCommentLikeCount(commentId: String) {
+        _commentLikeCountStates[commentId] = ResultState.Loading
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.getCommentLikeCount(commentId)
+                if (response.status) {
+                    _commentLikeCountStates[commentId] = ResultState.Success(response.data.first().count)
+                } else {
+                    _commentLikeCountStates[commentId] = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _commentLikeCountStates[commentId] = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
     }
 
 }

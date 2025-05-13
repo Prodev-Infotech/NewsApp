@@ -61,6 +61,3 @@ actual fun shareNews(title: String, details: String, link: String) {
     context.startActivity(chooser)
 
 }
-
-actual fun setStatusBarColor(color: Color) {
-}

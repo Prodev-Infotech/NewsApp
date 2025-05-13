@@ -14,7 +14,6 @@ import org.kotlin.multiplatform.newsapp.screen.NewsDetailScreen
 import org.kotlin.multiplatform.newsapp.screen.SignUpScreen
 import org.kotlin.multiplatform.newsapp.screen.SplashScreen
 import org.kotlin.multiplatform.newsapp.utils.SessionUtil
-import org.kotlin.multiplatform.newsapp.utils.setStatusBarColor
 import org.kotlin.multiplatform.newsapp.viewmodel.NewsViewmodel
 import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 

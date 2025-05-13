@@ -1,7 +1,6 @@
 package org.kotlin.multiplatform.newsapp.utils
 
 import com.russhwolf.settings.Settings
-import androidx.compose.ui.graphics.Color
 
 
 expect val settings: Settings
@@ -14,4 +13,3 @@ expect class BookmarksUtil() {
 
 expect fun shareNews(title: String, details: String, link: String)
 
-expect fun setStatusBarColor(color: Color)
