@@ -99,6 +99,5 @@ fun BookMarkScreen(
             }
         }
 
-
     }
 }

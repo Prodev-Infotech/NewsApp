@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -62,7 +64,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import newskotlinproject.composeapp.generated.resources.Res
-import newskotlinproject.composeapp.generated.resources.ic_bookmark
 import newskotlinproject.composeapp.generated.resources.ic_comments
 import newskotlinproject.composeapp.generated.resources.ic_fill_bookmark
 import newskotlinproject.composeapp.generated.resources.ic_fill_like
@@ -73,7 +74,6 @@ import newskotlinproject.composeapp.generated.resources.ic_unfill_bookmark
 import newskotlinproject.composeapp.generated.resources.ic_unfill_like
 import newskotlinproject.composeapp.generated.resources.ic_user
 import org.jetbrains.compose.resources.painterResource
-import org.kotlin.multiplatform.newsapp.model.Comment
 import org.kotlin.multiplatform.newsapp.model.NewsPost
 import org.kotlin.multiplatform.newsapp.model.ResultState
 import org.kotlin.multiplatform.newsapp.openLink
@@ -81,7 +81,6 @@ import org.kotlin.multiplatform.newsapp.utils.SessionUtil
 import org.kotlin.multiplatform.newsapp.utils.formatDateOnly
 import org.kotlin.multiplatform.newsapp.utils.getTimeAgo
 import org.kotlin.multiplatform.newsapp.viewmodel.NewsViewmodel
-import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -194,126 +193,6 @@ fun NewsScreen(
 
     }
 }
-//@Composable
-//fun NewsItem(
-//    news: NewsPost,
-//    newsViewmodel: NewsViewmodel,
-//    isBookMarkScreen: Boolean,
-//    navController: NavController
-//) {
-//    val timeAgo = remember(news.createdAt) {
-//        getTimeAgo(news.createdAt)
-//    }
-//    val formattedDate = formatDateOnly(news.createdAt)
-//    val isBookmarked = newsViewmodel.isBookmarked(news.id)
-//
-//    Card(
-//        modifier = Modifier
-//            .padding(8.dp)
-//            .fillMaxWidth()
-//            .clickable {
-//                navController.navigate("news/detail/${news.id}")
-//                println("News List News Id:-->${news.id}")
-//            },
-//        colors = CardDefaults.cardColors(containerColor = Color.White),
-//        shape = RoundedCornerShape(12.dp),
-//        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-//    ) {
-//        Column(modifier = Modifier.padding(16.dp)) {
-//
-//            // Top row: Channel name and time ago
-//            Row(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.SpaceBetween,
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                Text(
-//                    text = news.channelName,
-//                    style = MaterialTheme.typography.titleMedium,
-//                    fontWeight = FontWeight.Bold,
-//                    color = Color.Black
-//                )
-//
-//                Text(
-//                    text = timeAgo,
-//                    style = MaterialTheme.typography.bodySmall,
-//                    color = Color.Gray
-//                )
-//            }
-//
-//            Spacer(modifier = Modifier.height(10.dp))
-//
-//            // Title
-//            Text(
-//                text = news.title,
-//                style = MaterialTheme.typography.titleSmall,
-//                fontWeight = FontWeight.SemiBold,
-//                maxLines = 2,
-//                overflow = TextOverflow.Ellipsis,
-//                color = Color.DarkGray
-//            )
-//
-//            Spacer(modifier = Modifier.height(4.dp))
-//
-//            // Link
-//            Text(
-//                text = news.link,
-//                style = MaterialTheme.typography.bodyMedium.copy(
-//                    color = Color.Blue,
-//                    textDecoration = TextDecoration.Underline
-//                ),
-//                modifier = Modifier.clickable {
-//                    openLink(news.link)
-//                }
-//            )
-//
-//            Spacer(modifier = Modifier.height(8.dp))
-//
-//            // Date
-//            Row(
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                Icon(
-//                    painter = painterResource(Res.drawable.ic_news),
-//                    contentDescription = "Calendar",
-//                    tint = Color.Gray,
-//                    modifier = Modifier.size(16.dp)
-//                )
-//
-//                Spacer(modifier = Modifier.width(4.dp))
-//
-//                Text(
-//                    text = formattedDate,
-//                    style = MaterialTheme.typography.bodySmall,
-//                    color = Color.Gray
-//                )
-//                // Bookmark icon at the bottom right
-//                Row(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalArrangement = Arrangement.End
-//                ) {
-//                    Icon(
-//                        painter = painterResource(
-//                            if (isBookmarked) Res.drawable.ic_fill_bookmark
-//                            else Res.drawable.ic_unfill_bookmark
-//                        ),
-//                        contentDescription = "Bookmark",
-//                        tint = if (isBookmarked) Color.Blue else Color.Gray,
-//                        modifier = Modifier
-//                            .size(32.dp)
-//                            .clickable {
-//                                if (!isBookMarkScreen) {
-//                                    newsViewmodel.toggleBookmark(news)
-//                                }
-//                            }
-//                    )
-//                }
-//            }
-//
-//
-//        }
-//    }
-//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -337,7 +216,6 @@ fun NewsItem(
         newsViewmodel.getLikeCount(news.id)
         newsViewmodel.getComments(news.id)
         newsViewmodel.getUserLikeStatus(news.id, SessionUtil.getUserId().toString())
-
     }
 
     val timeAgo = remember(news.createdAt) { getTimeAgo(news.createdAt) }
@@ -509,10 +387,26 @@ fun NewsItem(
                 when (commentsState) {
                     is ResultState.Success -> {
                         val comments = (commentsState).data
+
+                        if (comments.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No comment!",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                            }
+                        } else {
                         LaunchedEffect(comments.size) {
                             if (comments.isNotEmpty()) {
                                 listState.animateScrollToItem(comments.lastIndex)
                             }
+                        }
                         }
                         LazyColumn(
                             state = listState, // <--- this is crucial
@@ -522,6 +416,15 @@ fun NewsItem(
 
 
                             items(comments) { comment ->
+
+                                val commentId = comment.id
+                                val userId = SessionUtil.getUserId().toString()
+
+                                // Trigger fetching like status/count per comment
+                                LaunchedEffect(commentId) {
+                                    newsViewmodel.getCommentLikeStatus(commentId, userId)
+                                    newsViewmodel.getCommentLikeCount(commentId)
+                                }
 
                                 val isLiked = newsViewmodel.commentLikeStates[comment.id] is ResultState.Success && (newsViewmodel.commentLikeStates[comment.id] as ResultState.Success).data
                                 val likeCount = newsViewmodel.commentLikeCountStates[comment.id] as? ResultState.Success<Int>
@@ -568,39 +471,27 @@ fun NewsItem(
                                         // View replies text
                                     }
 
-                                    // Like button
-                                    IconButton(
-                                        onClick = {
-                                            // Toggle like/unlike
-                                            if (isLiked) {
-                                                newsViewmodel.toggleCommentLike(comment.id, SessionUtil.getUserId().toString())
-                                            } else {
-                                                newsViewmodel.toggleCommentLike(comment.id, SessionUtil.getUserId().toString())
-                                            }
-                                            // Optionally, toggle like state here directly
-                                        }
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(
-                                            imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                            contentDescription = "Like comment",
-                                            tint = if (isLiked) Color.Red else Color.Gray,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                    // Show like count
-                                    likeCount?.let {
+                                        IconButton(
+                                            onClick = {
+                                                newsViewmodel.toggleCommentLike(commentId, userId)
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                                contentDescription = "Like comment",
+                                                tint = if (isLiked) Color.Red else Color.Gray,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                         Text(
-                                            text = "${it.data}",
+                                            text = "${likeCount?.data ?: 0}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = Color.Gray
                                         )
                                     }
-//                                    Icon(
-//                                        imageVector = Icons.Default.FavoriteBorder,
-//                                        contentDescription = "Like comment",
-//                                        tint = Color.Gray,
-//                                        modifier = Modifier.size(20.dp)
-//                                    )
                                 }
                                 Divider(color = Color.LightGray)
                             }
@@ -631,19 +522,25 @@ fun NewsItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Placeholder avatar
+                    val scrollState = rememberScrollState()
 
-                    OutlinedTextField(
-                        value = commentInput,
-                        onValueChange = { commentInput = it },
-                        placeholder = { Text("Add a comment...") },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.LightGray,
-                            unfocusedBorderColor = Color.LightGray
-                        ),
-                        maxLines = 5,
-                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(scrollState)
+                    ) {
+                        OutlinedTextField(
+                            value = commentInput,
+                            onValueChange = { commentInput = it },
+                            placeholder = { Text("Add a comment...") },
+                            shape = RoundedCornerShape(20.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.LightGray,
+                                unfocusedBorderColor = Color.LightGray
+                            ),
+                            maxLines = 5,
+                        )
+                    }
 
                     Spacer(modifier = Modifier.width(8.dp))
 
@@ -667,58 +564,5 @@ fun NewsItem(
         }
     }
 
-//    // 🔻 BottomSheet for Comments 🔻
-//    if (showBottomSheet.value) {
-//        ModalBottomSheet(
-//            sheetState = sheetState,
-//            onDismissRequest = { showBottomSheet.value = false }
-//        ) {
-//            Column(modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(16.dp)) {
-//                Text("Comments", style = MaterialTheme.typography.titleMedium)
-//                Spacer(modifier = Modifier.height(8.dp))
-//
-//                when (commentsState) {
-//                    is ResultState.Success -> {
-//                        val comments = (commentsState as ResultState.Success<List<Comment>>).data
-//                        LazyColumn {
-//                            items(comments) { comment ->
-//                                Column(modifier = Modifier.padding(vertical = 8.dp)) {
-//                                    Text("User: ${comment.userId}", fontWeight = FontWeight.Bold)
-//                                    Text(comment.content)
-//                                }
-//                            }
-//                        }
-//                    }
-//                    is ResultState.Loading -> CircularProgressIndicator()
-//                    is ResultState.Error -> Text("Failed to load comments", color = Color.Red)
-//                    else -> {}
-//                }
-//
-//                Spacer(modifier = Modifier.height(12.dp))
-//
-//                OutlinedTextField(
-//                    value = commentInput,
-//                    onValueChange = { commentInput = it },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    placeholder = { Text("Add a comment...") }
-//                )
-//
-//                Button(
-//                    onClick = {
-//                        if (commentInput.isNotBlank()) {
-//                            newsViewmodel.postComment(news.id, SessionUtil.getUserId().toString(), commentInput)
-//                            commentInput = ""
-//                        }
-//                    },
-//                    modifier = Modifier
-//                        .align(Alignment.End)
-//                        .padding(top = 8.dp)
-//                ) {
-//                    Text("Post")
-//                }
-//            }
-//        }
-//    }
+
 }

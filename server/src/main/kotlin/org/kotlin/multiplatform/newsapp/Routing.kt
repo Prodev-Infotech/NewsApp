@@ -189,203 +189,206 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                     )
                 }
             }
-        }
 
+            // POST /news/{id}/comment
+            post("/{id}/comment") {
+                val newsId = call.parameters["id"]
+                if (newsId == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        CommentResponse<Comment>(
+                            status = false,
+                            message = "Invalid news ID",
+                            data = emptyList()
+                        )
+                    )
+                    return@post
+                }
 
-    // POST /news/{id}/comment
-    post("/{id}/comment") {
-        val newsId = call.parameters["id"]
-        if (newsId == null) {
-            call.respond(
-                HttpStatusCode.BadRequest,
-                CommentResponse<Comment>(
-                    status = false,
-                    message = "Invalid news ID",
-                    data = emptyList()
+                val request = call.receive<CommentRequest>()
+                val comment = Comment(
+                    newsId = newsId,
+                    userId = request.userId,
+                    content = request.content,
+                    userName = request.userName
                 )
-            )
-            return@post
-        }
+                val savedComment = newsRepository.addComment(newsId, comment)
 
-        val request = call.receive<CommentRequest>()
-        val comment = Comment(
-            newsId = newsId,
-            userId = request.userId,
-            content = request.content,
-            userName = request.userName
-        )
-        val savedComment = newsRepository.addComment(newsId, comment)
-
-        call.respond(
-            HttpStatusCode.Created,
-            CommentResponse(
-                status = true,
-                message = "Comment added successfully",
-                data = listOf(savedComment)
-            )
-        )
-    }
+                call.respond(
+                    HttpStatusCode.Created,
+                    CommentResponse(
+                        status = true,
+                        message = "Comment added successfully",
+                        data = listOf(savedComment)
+                    )
+                )
+            }
 
 // GET /news/{id}/comments
-    get("/{id}/comments") {
-        val newsId = call.parameters["id"]
-        if (newsId == null) {
-            call.respond(
-                HttpStatusCode.BadRequest,
-                CommentResponse<Comment>(
-                    status = false,
-                    message = "Invalid news ID",
-                    data = emptyList()
-                )
-            )
-            return@get
-        }
+            get("/{id}/comments") {
+                val newsId = call.parameters["id"]
+                if (newsId == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        CommentResponse<Comment>(
+                            status = false,
+                            message = "Invalid news ID",
+                            data = emptyList()
+                        )
+                    )
+                    return@get
+                }
 
-        val comments = newsRepository.getComments(newsId)
-        call.respond(
-            HttpStatusCode.OK,
-            CommentResponse(
-                status = true,
-                message = "Comments fetched successfully",
-                data = comments
-            )
-        )
-    }
+                val comments = newsRepository.getComments(newsId)
+                call.respond(
+                    HttpStatusCode.OK,
+                    CommentResponse(
+                        status = true,
+                        message = "Comments fetched successfully",
+                        data = comments
+                    )
+                )
+            }
 
 // POST /news/{id}/like
-    post("/{id}/like") {
-        val newsId = call.parameters["id"]
-        if (newsId == null) {
-            call.respond(
-                HttpStatusCode.BadRequest,
-                CommentResponse<LikeStatusResponse>(
-                    status = false,
-                    message = "Invalid news ID",
-                    data = emptyList()
+            post("/{id}/like") {
+                val newsId = call.parameters["id"]
+                if (newsId == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        CommentResponse<LikeStatusResponse>(
+                            status = false,
+                            message = "Invalid news ID",
+                            data = emptyList()
+                        )
+                    )
+                    return@post
+                }
+
+                val request = call.receive<LikeRequest>()
+                val liked = newsRepository.toggleLike(newsId, request.userId)
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    CommentResponse(
+                        status = true,
+                        message = if (liked) "Liked" else "Unliked",
+                        data = listOf(LikeStatusResponse(liked))
+                    )
                 )
-            )
-            return@post
-        }
-
-        val request = call.receive<LikeRequest>()
-        val liked = newsRepository.toggleLike(newsId, request.userId)
-
-        call.respond(
-            HttpStatusCode.OK,
-            CommentResponse(
-                status = true,
-                message = if (liked) "Liked" else "Unliked",
-                data = listOf(LikeStatusResponse(liked))
-            )
-        )
-    }
+            }
 
 // GET /news/{id}/likes
-    get("/{id}/likes") {
-        val newsId = call.parameters["id"]
-        if (newsId == null) {
-            call.respond(
-                HttpStatusCode.BadRequest,
-                CommentResponse<LikeCount>(
-                    status = false,
-                    message = "Invalid news ID",
-                    data = emptyList()
+            get("/{id}/likes") {
+                val newsId = call.parameters["id"]
+                if (newsId == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        CommentResponse<LikeCount>(
+                            status = false,
+                            message = "Invalid news ID",
+                            data = emptyList()
+                        )
+                    )
+                    return@get
+                }
+
+                val count = newsRepository.getLikes(newsId)
+                call.respond(
+                    HttpStatusCode.OK,
+                    CommentResponse(
+                        status = true,
+                        message = "Like count fetched",
+                        data = listOf(LikeCount(count))
+                    )
                 )
-            )
-            return@get
-        }
+            }
 
-        val count = newsRepository.getLikes(newsId)
-        call.respond(
-            HttpStatusCode.OK,
-            CommentResponse(
-                status = true,
-                message = "Like count fetched",
-                data = listOf(LikeCount(count))
-            )
-        )
-    }
+            get("/{id}/like-status") {
+                val newsId = call.parameters["id"]
+                val userId = call.request.queryParameters["userId"]
 
-    get("/{id}/like-status") {
-        val newsId = call.parameters["id"]
-        val userId = call.request.queryParameters["userId"]
+                if (newsId == null || userId.isNullOrEmpty()) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        CommentResponse<LikeStatusResponse>(
+                            status = false,
+                            message = "Missing news ID or user ID",
+                            data = emptyList()
+                        )
+                    )
+                    return@get
+                }
 
-        if (newsId == null || userId.isNullOrEmpty()) {
-            call.respond(
-                HttpStatusCode.BadRequest,
-                CommentResponse<LikeStatusResponse>(
-                    status = false,
-                    message = "Missing news ID or user ID",
-                    data = emptyList()
+                val liked = newsRepository.getUserLikeStatus(newsId, userId)
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    CommentResponse(
+                        status = true,
+                        message = "User like status fetched",
+                        data = listOf(LikeStatusResponse(liked))
+                    )
                 )
-            )
-            return@get
+            }
+
+            post("/comments/{id}/like") {
+                val commentId = call.parameters["id"]
+                if (commentId == null) {
+                    call.respond(HttpStatusCode.BadRequest, CommentResponse<LikeStatusResponse>(
+                        status = false, message = "Invalid comment ID", data = emptyList()
+                    ))
+                    return@post
+                }
+
+                val request = call.receive<LikeRequest>()
+                val liked = newsRepository.toggleCommentLike(commentId, request.userId)
+
+                call.respond(HttpStatusCode.OK, CommentResponse(
+                    status = true,
+                    message = if (liked) "Comment liked" else "Comment unliked",
+                    data = listOf(LikeStatusResponse(liked))
+                ))
+            }
+            get("/comments/{id}/likes") {
+                val commentId = call.parameters["id"]
+                if (commentId == null) {
+                    call.respond(HttpStatusCode.BadRequest, CommentResponse<LikeCount>(
+                        status = false, message = "Invalid comment ID", data = emptyList()
+                    ))
+                    return@get
+                }
+
+                val count = newsRepository.getCommentLikeCount(commentId)
+                call.respond(HttpStatusCode.OK, CommentResponse(
+                    status = true,
+                    message = "Comment like count fetched",
+                    data = listOf(LikeCount(count))
+                ))
+            }
+
+            get("/comments/{id}/like-status") {
+                val commentId = call.parameters["id"]
+                val userId = call.request.queryParameters["userId"]
+
+                if (commentId == null || userId.isNullOrEmpty()) {
+                    call.respond(HttpStatusCode.BadRequest, CommentResponse<LikeStatusResponse>(
+                        status = false, message = "Missing comment ID or user ID", data = emptyList()
+                    ))
+                    return@get
+                }
+
+                val liked = newsRepository.getUserCommentLikeStatus(commentId, userId)
+                call.respond(HttpStatusCode.OK, CommentResponse(
+                    status = true,
+                    message = "User like status fetched for comment",
+                    data = listOf(LikeStatusResponse(liked))
+                ))
+            }
         }
 
-        val liked = newsRepository.getUserLikeStatus(newsId, userId)
 
-        call.respond(
-            HttpStatusCode.OK,
-            CommentResponse(
-                status = true,
-                message = "User like status fetched",
-                data = listOf(LikeStatusResponse(liked))
-            )
-        )
-    }
 
-    post("/comments/{id}/like") {
-        val commentId = call.parameters["id"]
-        if (commentId == null) {
-            call.respond(HttpStatusCode.BadRequest, CommentResponse<LikeStatusResponse>(
-                status = false, message = "Invalid comment ID", data = emptyList()
-            ))
-            return@post
-        }
 
-        val request = call.receive<LikeRequest>()
-        val liked = newsRepository.toggleCommentLike(commentId, request.userId)
-
-        call.respond(HttpStatusCode.OK, CommentResponse(
-            status = true,
-            message = if (liked) "Comment liked" else "Comment unliked",
-            data = listOf(LikeStatusResponse(liked))
-        ))
-    }
-    get("/comments/{id}/likes") {
-        val commentId = call.parameters["id"]
-        if (commentId == null) {
-            call.respond(HttpStatusCode.BadRequest, CommentResponse<LikeCount>(
-                status = false, message = "Invalid comment ID", data = emptyList()
-            ))
-            return@get
-        }
-
-        val count = newsRepository.getCommentLikeCount(commentId)
-        call.respond(HttpStatusCode.OK, CommentResponse(
-            status = true,
-            message = "Comment like count fetched",
-            data = listOf(LikeCount(count))
-        ))
-    }
-
-    get("/comments/{id}/like-status") {
-        val commentId = call.parameters["id"]
-        val userId = call.request.queryParameters["userId"]
-
-        if (commentId == null || userId.isNullOrEmpty()) {
-            call.respond(HttpStatusCode.BadRequest, CommentResponse<LikeStatusResponse>(
-                status = false, message = "Missing comment ID or user ID", data = emptyList()
-            ))
-            return@get
-        }
-
-        val liked = newsRepository.getUserCommentLikeStatus(commentId, userId)
-        call.respond(HttpStatusCode.OK, CommentResponse(
-            status = true,
-            message = "User like status fetched for comment",
-            data = listOf(LikeStatusResponse(liked))
-        ))
-    }
 
 }

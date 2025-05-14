@@ -32,45 +32,45 @@ interface NewsServices {
     @POST("login")
     suspend fun login(@Body request: LoginRequest): ApiResponse<User>
 
-    @GET("{id}/comments")
+    @GET("news/{id}/comments")
     suspend fun getComments(@Path("id") newsId: String): CommentResponse<Comment>
 
-    @POST("{id}/comment")
+    @POST("news/{id}/comment")
     suspend fun postComment(
         @Path("id") newsId: String,
         @Body request: CommentRequest
     ): CommentResponse<Comment>
 
-    @POST("{id}/like")
+    @POST("news/{id}/like")
     suspend fun toggleLike(
         @Path("id") newsId: String,
         @Body request: LikeRequest
     ): CommentResponse<LikeStatusResponse>
 
-    @GET("{id}/likes")
+    @GET("news/{id}/likes")
     suspend fun getLikeCount(@Path("id") newsId: String): CommentResponse<LikeCount>
 
-    @GET("{id}/like-status")
+    @GET("news/{id}/like-status")
     suspend fun getUserLikeStatus(
         @Path("id") newsId: String,
         @Query("userId") userId: String
     ): CommentResponse<LikeStatusResponse>
 
     // Toggle comment like
-    @POST("comments/{id}/like")
+    @POST("news/comments/{id}/like")
     suspend fun toggleCommentLike(
         @Path("id") commentId: String,
         @Body request: LikeRequest
     ): CommentResponse<LikeStatusResponse>
 
     // Get comment like count
-    @GET("comments/{id}/likes")
+    @GET("news/comments/{id}/likes")
     suspend fun getCommentLikeCount(
         @Path("id") commentId: String
     ): CommentResponse<LikeCount>
 
     // Get user like status for a comment
-    @GET("comments/{id}/like-status")
+    @GET("news/comments/{id}/like-status")
     suspend fun getUserCommentLikeStatus(
         @Path("id") commentId: String,
         @Query("userId") userId: String
