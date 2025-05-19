@@ -1,8 +1,15 @@
 package org.kotlin.multiplatform.newsapp
 
+import io.ktor.http.ContentDisposition.Companion.File
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
+import io.ktor.http.content.streamProvider
 import io.ktor.server.request.receive
+import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondFile
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
@@ -22,6 +29,7 @@ import org.kotlin.multiplatform.newsapp.model.NewsPostResponse
 import org.kotlin.multiplatform.newsapp.model.User
 import org.kotlin.multiplatform.newsapp.model.UserNewsResponse
 import org.kotlin.multiplatform.newsapp.model.UserWithNews
+import java.io.File
 
 fun Route.configureRouting(newsRepository: NewsRepository,
                            userRepo: UserRepository) {
@@ -35,7 +43,8 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                         title = request.title,
                         details = request.details,
                         link = request.link,
-                        channelName = request.channelName
+                        channelName = request.channelName,
+                        imageUrl = request.imageUrl
                         // id, createdAt, isBookMark will use default values
                     )
                     val savedNews = newsRepository.addNews(news)
@@ -385,6 +394,38 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                     data = listOf(LikeStatusResponse(liked))
                 ))
             }
+
+            post("/upload/image") {
+                val multipart = call.receiveMultipart()
+                var fileName: String? = null
+                multipart.forEachPart { part ->
+                    if (part is PartData.FileItem && part.name == "image") {
+                        fileName = part.originalFileName ?: "unnamed.jpg"
+                        val bytes = part.streamProvider().readBytes()
+                        File("uploads/$fileName").writeBytes(bytes)
+                    }
+                    part.dispose()
+                }
+                if (fileName != null) {
+                    call.respond(ApiResponse(true, "File uploaded", fileName))
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, ApiResponse(false, "No file received",data = null))
+                }
+            }
+
+            get("/image/{filename}") {
+                val filename = call.parameters["filename"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing filename")
+                val file = File("uploads/$filename")
+
+                if (!file.exists()) {
+                    call.respond(HttpStatusCode.NotFound, "File not found")
+                    return@get
+                }
+
+                // Respond with the image bytes and proper content type
+                call.respondFile(file)
+            }
+
         }
 
 

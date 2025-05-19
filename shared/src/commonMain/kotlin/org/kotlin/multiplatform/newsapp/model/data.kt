@@ -15,7 +15,8 @@ data class CreateNewsRequest(
     val title: String,
     val details: String,
     val link: String,
-    val channelName: String
+    val channelName: String,
+    val imageUrl: String
 )
 @Serializable
 data class NewsPost(
@@ -24,8 +25,9 @@ data class NewsPost(
     val createdAt: String=getCurrentFormattedDate(),
     val details: String,
     val link: String,
-    val channelName: String,
-    var isBookMark: Boolean = false
+    val channelName: String="",
+    var isBookMark: Boolean = false,
+    var imageUrl:String
 )
 
 @Serializable

@@ -1,10 +1,12 @@
 package org.kotlin.multiplatform.newsapp.screen
 
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -55,13 +58,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import io.kamel.core.Resource
+import io.kamel.core.config.KamelConfig
+import io.kamel.core.utils.cacheControl
+import io.kamel.image.KamelImage
+import io.kamel.image.asyncPainterResource
+import io.kamel.image.config.imageBitmapDecoder
 import kotlinx.coroutines.launch
 import newskotlinproject.composeapp.generated.resources.Res
 import newskotlinproject.composeapp.generated.resources.ic_comments
@@ -233,132 +245,173 @@ fun NewsItem(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Top: Channel name and time
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = news.channelName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
+        Row(modifier = Modifier
+            .padding(10.dp)
+            .wrapContentHeight()
+        ) {
+            // Image on the left
+
+                val imageResource = asyncPainterResource(news.imageUrl)
+
+                KamelImage(
+                    resource = imageResource,
+                    contentDescription = "contentDescription",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.height(150.dp)
+                    .width(150.dp)
+                    .clip(RoundedCornerShape(5.dp)),
+                    onLoading = {
+                        println("Loading image..")
+                    },
+                    onFailure = {
+                            println("Failed to load image")
+                    }
                 )
-                Text(
-                    text = timeAgo,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-            }
 
-            Spacer(modifier = Modifier.height(10.dp))
 
-            Text(
-                text = news.title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = Color.DarkGray
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = news.link,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Blue,
-                    textDecoration = TextDecoration.Underline
-                ),
-                modifier = Modifier.clickable { openLink(news.link) }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Date and Bookmark
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_news),
-                    contentDescription = "Calendar",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = formattedDate,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(
-                    painter = painterResource(
-                        if (isBookmarked) Res.drawable.ic_fill_bookmark else Res.drawable.ic_unfill_bookmark
-                    ),
-                    contentDescription = "Bookmark",
-                    tint = if (isBookmarked) Color.Blue else Color.Gray,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clickable {
-                            if (!isBookMarkScreen) {
-                                newsViewmodel.toggleBookmark(news)
-                            }
-                        }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Like and Comment Row
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Like Button
-                val isLiked = likeState is ResultState.Success && (likeState ).data
-                println("isLiked:--$isLiked")
-                Icon(
-                    painter = painterResource(
-                        if (isLiked) Res.drawable.ic_fill_like else Res.drawable.ic_unfill_like
-                    ),
-                    contentDescription = "Like",
-                    tint = if (isLiked) Color.Red else Color.Gray,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {
-                            newsViewmodel.toggleLike(news.id, SessionUtil.getUserId().toString())
-                        }
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-
-                // Like count
-                when (likeCountState) {
-                    is ResultState.Success -> Text(
-                        text = "${(likeCountState as ResultState.Success).data}",
-                        color = Color.Black
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                // Top: Channel name and time
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = news.channelName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f) // takes up remaining space
                     )
-                    is ResultState.Loading -> CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                    else -> Text("0", color = Color.Black)
+                    Spacer(modifier = Modifier.width(8.dp)) // small gap
+                    Text(
+                        text = timeAgo,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
-                // Comment icon and count
-                Icon(
-                    painter = painterResource(Res.drawable.ic_comments),
-                    contentDescription = "Comments",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {
-                            showBottomSheet.value = true
-                            scope.launch { sheetState.show() }
-                        }
+                Text(
+                    text = news.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.DarkGray
                 )
-                Spacer(modifier = Modifier.width(6.dp))
-                if (commentsState is ResultState.Success) {
-                    val count = (commentsState as ResultState.Success).data.size
-                    Text("$count", color = Color.Black)
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = news.link,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color.Blue,
+                        textDecoration = TextDecoration.Underline
+                    ),
+                    modifier = Modifier.clickable { openLink(news.link) },
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                Spacer(modifier = Modifier.height(5.dp))
+
+                // Date and Bookmark
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_news),
+                        contentDescription = "Calendar",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = formattedDate,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(
+                        painter = painterResource(
+                            if (isBookmarked) Res.drawable.ic_fill_bookmark else Res.drawable.ic_unfill_bookmark
+                        ),
+                        contentDescription = "Bookmark",
+                        tint = if (isBookmarked) Color.Blue else Color.Gray,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clickable {
+                                if (!isBookMarkScreen) {
+                                    newsViewmodel.toggleBookmark(news)
+                                }
+                            }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Like and Comment Row
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Like Button
+                    val isLiked = likeState is ResultState.Success && (likeState).data
+                    println("isLiked:--$isLiked")
+                    Icon(
+                        painter = painterResource(
+                            if (isLiked) Res.drawable.ic_fill_like else Res.drawable.ic_unfill_like
+                        ),
+                        contentDescription = "Like",
+                        tint = if (isLiked) Color.Red else Color.Gray,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                newsViewmodel.toggleLike(
+                                    news.id,
+                                    SessionUtil.getUserId().toString()
+                                )
+                            }
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Like count
+                    when (likeCountState) {
+                        is ResultState.Success -> Text(
+                            text = "${(likeCountState as ResultState.Success).data}",
+                            color = Color.Black
+                        )
+
+                        is ResultState.Loading -> CircularProgressIndicator(
+                            modifier = Modifier.size(
+                                16.dp
+                            )
+                        )
+
+                        else -> Text("0", color = Color.Black)
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Comment icon and count
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_comments),
+                        contentDescription = "Comments",
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                showBottomSheet.value = true
+                                scope.launch { sheetState.show() }
+                            }
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    if (commentsState is ResultState.Success) {
+                        val count = (commentsState as ResultState.Success).data.size
+                        Text("$count", color = Color.Black)
+                    }
                 }
             }
         }
+
     }
     val listState = rememberLazyListState()
 

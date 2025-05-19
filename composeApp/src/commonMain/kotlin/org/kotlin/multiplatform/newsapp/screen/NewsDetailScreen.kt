@@ -52,7 +52,7 @@ fun NewsDetailScreen(
     }
 
 
-    var news by remember { mutableStateOf<NewsPost>(NewsPost("", "", "", "", "", "")) }
+    var news by remember { mutableStateOf<NewsPost>(NewsPost("", "", "", "", "", "", imageUrl = "")) }
     when (updateLabelsState) {
 
         is ResultState.Success -> {

@@ -58,6 +58,9 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+
+            implementation("media.kamel:kamel-fetcher-resources-android:1.0.5")
+
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -78,6 +81,12 @@ kotlin {
             implementation(compose.material3)
             // window-size
             implementation(libs.screen.size)
+            implementation("media.kamel:kamel-image-default:1.0.5")
+            implementation("org.jetbrains.kotlin:kotlin-reflect")
+            implementation("media.kamel:kamel-decoder-image-bitmap:1.0.5")
+            implementation("media.kamel:kamel-decoder-image-bitmap-resizing:1.0.5") // android only
+
+            implementation("io.coil-kt:coil:2.6.0")
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
