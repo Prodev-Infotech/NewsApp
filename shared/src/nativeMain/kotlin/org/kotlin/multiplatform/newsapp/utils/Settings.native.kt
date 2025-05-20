@@ -30,5 +30,5 @@ actual class BookmarksUtil actual constructor() {
     }
 }
 
-actual fun shareNews(title: String, details: String, link: String) {
+actual fun shareNews(title: String, details: String, link: String, imageUrl: String?) {
 }

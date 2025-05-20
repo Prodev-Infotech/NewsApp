@@ -1,6 +1,5 @@
 package org.kotlin.multiplatform.newsapp
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast

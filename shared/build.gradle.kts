@@ -58,9 +58,9 @@ kotlin {
             implementation(libs.ktor.client.content.negotiation)
             api(libs.mvvm.core) // only ViewModel, EventsDispatcher, Dispatchers.UI
             api(libs.moko.mvvm.compose) // api mvvm-core, getViewModel for Compose Multiplatfrom
-            implementation("androidx.compose.ui:ui:1.8.1")
+            implementation(libs.androidx.ui)
 
-            implementation("com.russhwolf:multiplatform-settings:1.1.1")
+            implementation("com.russhwolf:multiplatform-settings:1.3.0")
 
         }
         androidMain.dependencies{

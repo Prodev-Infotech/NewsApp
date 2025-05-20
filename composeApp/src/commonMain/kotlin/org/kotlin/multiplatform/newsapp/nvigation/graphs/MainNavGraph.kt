@@ -30,7 +30,7 @@ fun NavGraphBuilder.mainNavGraph(
         }
         composable(route = Routes.Notes.route) {
             val newsViewmodel:NewsViewmodel= viewModel()
-            BookMarkScreen(rootNavController = rootNavController, paddingValues = innerPadding,newsViewmodel)
+            BookMarkScreen(rootNavController = rootNavController, paddingValues = innerPadding,newsViewmodel,navController=navController)
         }
 
     }

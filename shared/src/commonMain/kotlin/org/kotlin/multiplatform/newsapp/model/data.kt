@@ -82,29 +82,7 @@ data class UserResponse(
     val message: String,
     val data: User? = null
 )
-@Serializable
-data class UserBookmark(
-    val id: String = generateId(),
-    val userId: String,
-    val newsId: String
-)
 
-@Serializable
-data class UserWithNews(
-    val id: String,
-    val name: String,
-    val email: String,
-    val isAdmin: Boolean,
-    val createdAt: String,
-    val news: List<NewsPost>
-)
-
-@Serializable
-data class UserNewsResponse(
-    val status: Boolean,
-    val message: String,
-    val user: List<UserWithNews>
-)
 @Serializable
 data class CommentRequest(val userId: String, val content: String,val userName: String)
 
@@ -125,15 +103,9 @@ data class Comment(
     val createdAt: String = getCurrentFormattedDate()
 )
 
-@Serializable
-data class Like(
-    val id: String = generateId(),
-    val newsId: String,
-    val userId: String
-)
 sealed class ResultState<out T> {
-    object Initial : ResultState<Nothing>()
-    object Loading : ResultState<Nothing>()
+    data object Initial : ResultState<Nothing>()
+    data object Loading : ResultState<Nothing>()
     data class Success<out T>(val data: T) : ResultState<T>()
     data class Error(val exception: String) : ResultState<Nothing>()
 }

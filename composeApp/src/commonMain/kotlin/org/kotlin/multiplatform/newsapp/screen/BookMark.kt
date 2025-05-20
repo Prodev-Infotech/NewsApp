@@ -34,6 +34,7 @@ fun BookMarkScreen(
     rootNavController: NavController,
     paddingValues: PaddingValues,
     newsViewmodel: NewsViewmodel,
+    navController:NavController
 ) {
     val updateLabelsState by newsViewmodel.newsState
     var newsList by remember { mutableStateOf<List<NewsPost>>(emptyList()) }
@@ -93,7 +94,7 @@ fun BookMarkScreen(
             } else {
                 LazyColumn {
                     items(newsList) { news ->
-                        NewsItem(news, newsViewmodel, true, navController = rootNavController)
+                        NewsItem(news, newsViewmodel, true, navController = navController)
                     }
                 }
             }

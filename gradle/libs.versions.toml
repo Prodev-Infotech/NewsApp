@@ -13,6 +13,8 @@ androidx-material = "1.12.0"
 androidx-test-junit = "1.2.1"
 compose-multiplatform = "1.7.3"
 junit = "4.13.2"
+kamelDecoderImageBitmap = "1.0.5"
+kamelImageDefaultVersion = "1.0.5"
 kotlin = "2.1.10"
 kotlinx-coroutines = "1.10.2"
 ktor = "3.1.2"
@@ -20,6 +22,7 @@ logback = "1.5.18"
 
 ktorSerializationKotlinxJson = "3.1.2"
 kotlinxSerializationJson = "1.8.0"
+ui = "1.8.1"
 uuid = "0.8.0"
 kotlinxDatetime = "0.6.0"
 androidx-navigation = "2.8.0-alpha02"
@@ -34,6 +37,9 @@ ksp = "2.1.10-1.0.31"
 
 
 [libraries]
+androidx-ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
+kamel-decoder-image-bitmap = { module = "media.kamel:kamel-decoder-image-bitmap", version.ref = "kamelDecoderImageBitmap" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -54,6 +60,7 @@ ktor-server-test-host = { module = "io.ktor:ktor-server-test-host-jvm", version.
 
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorSerializationKotlinxJson" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+media-kamel-image-default = { module = "media.kamel:kamel-image-default", version.ref = "kamelImageDefaultVersion" }
 uuid = { module = "com.benasher44:uuid", version.ref = "uuid" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }

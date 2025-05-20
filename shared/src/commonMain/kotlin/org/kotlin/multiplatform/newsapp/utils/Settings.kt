@@ -11,5 +11,5 @@ expect class BookmarksUtil() {
     fun toggleBookmark(newsId: String, isBookmarked: Boolean)
 }
 
-expect fun shareNews(title: String, details: String, link: String)
+expect fun shareNews(title: String, details: String, link: String, imageUrl: String?)
 

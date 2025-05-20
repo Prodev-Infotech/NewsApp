@@ -1,6 +1,5 @@
 package org.kotlin.multiplatform.newsapp
 
-import io.ktor.http.ContentDisposition.Companion.File
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
@@ -9,12 +8,10 @@ import io.ktor.server.request.receive
 import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondFile
-import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import org.kotlin.multiplatform.newsapp.model.ApiResponse
 import org.kotlin.multiplatform.newsapp.model.Comment
@@ -26,9 +23,6 @@ import org.kotlin.multiplatform.newsapp.model.LikeRequest
 import org.kotlin.multiplatform.newsapp.model.LikeStatusResponse
 import org.kotlin.multiplatform.newsapp.model.NewsPost
 import org.kotlin.multiplatform.newsapp.model.NewsPostResponse
-import org.kotlin.multiplatform.newsapp.model.User
-import org.kotlin.multiplatform.newsapp.model.UserNewsResponse
-import org.kotlin.multiplatform.newsapp.model.UserWithNews
 import java.io.File
 
 fun Route.configureRouting(newsRepository: NewsRepository,
@@ -412,6 +406,33 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                     call.respond(HttpStatusCode.BadRequest, ApiResponse(false, "No file received",data = null))
                 }
             }
+//            post("/upload/image") {
+//                val multipart = call.receiveMultipart()
+//                var fileName: String? = null
+//
+//                // Clear the uploads folder before saving new image
+//                val uploadsDir = File("uploads")
+//                if (uploadsDir.exists()) {
+//                    uploadsDir.listFiles()?.forEach { it.delete() } // Delete each file
+//                } else {
+//                    uploadsDir.mkdirs() // Create directory if not present
+//                }
+//
+//                multipart.forEachPart { part ->
+//                    if (part is PartData.FileItem && part.name == "image") {
+//                        fileName = part.originalFileName ?: "unnamed.jpg"
+//                        val bytes = part.streamProvider().readBytes()
+//                        File(uploadsDir, fileName!!).writeBytes(bytes)
+//                    }
+//                    part.dispose()
+//                }
+//
+//                if (fileName != null) {
+//                    call.respond(ApiResponse(true, "File uploaded", fileName))
+//                } else {
+//                    call.respond(HttpStatusCode.BadRequest, ApiResponse(false, "No file received", data = null))
+//                }
+//            }
 
             get("/image/{filename}") {
                 val filename = call.parameters["filename"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing filename")

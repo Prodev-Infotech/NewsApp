@@ -7,7 +7,7 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-class KtorfitServiceCreator (val baseUrl: String){
+class KtorfitServiceCreator (baseUrl: String){
 
     private val httpClient = HttpClient {
         install(ContentNegotiation) {

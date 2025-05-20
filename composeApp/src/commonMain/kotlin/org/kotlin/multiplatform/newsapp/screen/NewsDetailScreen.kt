@@ -1,13 +1,19 @@
 package org.kotlin.multiplatform.newsapp.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
@@ -26,11 +32,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import io.kamel.core.Resource
+import io.kamel.image.KamelImage
+import io.kamel.image.asyncPainterResource
+import newskotlinproject.composeapp.generated.resources.Res
+import newskotlinproject.composeapp.generated.resources.ic_news_pl
+import org.jetbrains.compose.resources.painterResource
 import org.kotlin.multiplatform.newsapp.model.NewsPost
 import org.kotlin.multiplatform.newsapp.model.ResultState
 import org.kotlin.multiplatform.newsapp.openLink
@@ -52,7 +66,7 @@ fun NewsDetailScreen(
     }
 
 
-    var news by remember { mutableStateOf<NewsPost>(NewsPost("", "", "", "", "", "", imageUrl = "")) }
+    var news by remember { mutableStateOf(NewsPost("", "", "", "", "", "", imageUrl = "")) }
     when (updateLabelsState) {
 
         is ResultState.Success -> {
@@ -61,12 +75,13 @@ fun NewsDetailScreen(
 
         is ResultState.Error -> {
             val error = (updateLabelsState as ResultState.Error)
+            println("NewsDetails Error:-$error")
         }
 
         else -> {}
     }
 
-
+val scrollState= rememberScrollState()
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -95,7 +110,7 @@ fun NewsDetailScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        shareNews(news.title, news.details, news.link)
+                        shareNews(news.title, news.details, news.link,news.imageUrl)
                     }) {
                         Icon(Icons.Default.Share, null, tint = Color.White)
                     }
@@ -103,7 +118,8 @@ fun NewsDetailScreen(
             )
 
             // Display the details of the news post
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)
+                .verticalScroll(scrollState)) {
                 Text(
                     text = news.title,
                     style = MaterialTheme.typography.bodyLarge,
@@ -112,6 +128,36 @@ fun NewsDetailScreen(
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
+                // Image
+                val imageResource = asyncPainterResource(news.imageUrl)
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(5.dp))
+                ) {
+                    if (imageResource is Resource.Loading || imageResource is Resource.Failure) {
+                        Image(
+                            painter = painterResource(Res.drawable.ic_news_pl),
+                            contentDescription = "Loading placeholder",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                        )
+                    }
+                    KamelImage({ imageResource }, contentDescription = "contentDescription",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f),
+                        contentScale = ContentScale.Crop,
+                        onLoading = {
+                            println("Loading image...")
+                        }, onFailure = {
+                            println("Failed to load image")
+                        })
+                }
+                Spacer(modifier = Modifier.height(18.dp))
 
                 // Link
                 Text(
@@ -124,7 +170,7 @@ fun NewsDetailScreen(
                         openLink(news.link)
                     }
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 // News content/details
                 Text(
                     text = news.details,

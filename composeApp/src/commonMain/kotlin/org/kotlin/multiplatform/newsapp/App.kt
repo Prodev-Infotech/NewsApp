@@ -1,7 +1,6 @@
 package org.kotlin.multiplatform.newsapp
 
 import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,7 +12,6 @@ import org.kotlin.multiplatform.newsapp.screen.MainScreen
 import org.kotlin.multiplatform.newsapp.screen.NewsDetailScreen
 import org.kotlin.multiplatform.newsapp.screen.SignUpScreen
 import org.kotlin.multiplatform.newsapp.screen.SplashScreen
-import org.kotlin.multiplatform.newsapp.utils.SessionUtil
 import org.kotlin.multiplatform.newsapp.viewmodel.NewsViewmodel
 import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 
@@ -21,7 +19,6 @@ import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 @Preview
 fun App() {
     val navController = rememberNavController()
-    val startDestination = if (SessionUtil.isUserLoggedIn()) "main" else "Login"
     val newsViewmodel = remember { NewsViewmodel() }
 
     NavHost(navController = navController, startDestination = "Splash") {

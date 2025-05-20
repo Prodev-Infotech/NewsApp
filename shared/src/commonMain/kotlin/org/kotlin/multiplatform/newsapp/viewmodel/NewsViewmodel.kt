@@ -4,21 +4,19 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import dev.icerock.moko.mvvm.viewmodel.ViewModel
-import io.ktor.utils.io.errors.IOException
+import kotlinx.io.IOException
 import kotlinx.coroutines.launch
 import org.kotlin.multiplatform.newsapp.model.Comment
 import org.kotlin.multiplatform.newsapp.model.CommentRequest
 import org.kotlin.multiplatform.newsapp.model.LikeRequest
 import org.kotlin.multiplatform.newsapp.model.NewsPost
 import org.kotlin.multiplatform.newsapp.model.ResultState
-import org.kotlin.multiplatform.newsapp.model.User
 import org.kotlin.multiplatform.newsapp.network.KtorfitServiceCreator
 import org.kotlin.multiplatform.newsapp.utils.BookmarksUtil
-import org.kotlin.multiplatform.newsapp.utils.SessionUtil
 import org.kotlin.multiplatform.newsapp.utils.baseUrl
 
 class NewsViewmodel: ViewModel(){
-    val bookmarksUtil = BookmarksUtil() // Create the BookmarksUtil instance
+    private val bookmarksUtil = BookmarksUtil()
 
     private val _newsState = mutableStateOf<ResultState<List<NewsPost>>>(ResultState.Initial)
     val newsState: State<ResultState<List<NewsPost>>> get() = _newsState
@@ -26,27 +24,24 @@ class NewsViewmodel: ViewModel(){
     private val _newsDetailState = mutableStateOf<ResultState<NewsPost>>(ResultState.Initial)
     val newsDetailState: State<ResultState<NewsPost>> get() = _newsDetailState
 
-//    private val _signUpState = mutableStateOf<ResultState<User>>(ResultState.Initial)
-//    val signUpState: State<ResultState<User>> get() = _signUpState
-
     private val _bookmarks = mutableStateOf<Set<String>>(emptySet())
-    val bookmarks: State<Set<String>> = _bookmarks
+    private val bookmarks: State<Set<String>> = _bookmarks
 
     private val _newsList = mutableStateOf<List<NewsPost>>(emptyList())
     val newsList: State<List<NewsPost>> = _newsList
 
-    val ktorfitService = KtorfitServiceCreator(baseUrl)
+    private val ktorfitService = KtorfitServiceCreator(baseUrl)
 
     init {
         fetchNews()
         loadBookmarks()
     }
 
-    fun loadBookmarks() {
+    private fun loadBookmarks() {
         _bookmarks.value = bookmarksUtil.getBookmarks().toSet()
     }
     // Function to fetch news
-    fun fetchNews() {
+    private fun fetchNews() {
         _newsState.value = ResultState.Loading // Start loading
 
         viewModelScope.launch {
@@ -56,7 +51,7 @@ class NewsViewmodel: ViewModel(){
                     _newsState.value = ResultState.Success(response.data.reversed())
                 }
                 else{
-                    _newsState.value = ResultState.Error(response.message.toString())
+                    _newsState.value = ResultState.Error(response.message)
                 }
 
             }  catch (e: IOException) {
@@ -84,7 +79,7 @@ class NewsViewmodel: ViewModel(){
                     }
                 }
                 else{
-                    _newsDetailState.value = ResultState.Error(response.message.toString())
+                    _newsDetailState.value = ResultState.Error(response.message)
                 }
 
             }  catch (e: IOException) {
@@ -105,9 +100,9 @@ class NewsViewmodel: ViewModel(){
         }
 
         if (news.isBookMark) {
-            _bookmarks.value = _bookmarks.value + news.id
+            _bookmarks.value += news.id
         } else {
-            _bookmarks.value = _bookmarks.value - news.id
+            _bookmarks.value -= news.id
         }
     }
     fun fetchBookMarkNews() {
@@ -119,15 +114,10 @@ class NewsViewmodel: ViewModel(){
                 val response = ktorfitService.api.getNews()
 
                 // Assuming you're using Ktorfit and response is a custom object
-                if (response.data != null) {
-                    val filtered = response.data.filter { it.id in bookmarks }
-                    println(" Filtered Bookmarked News: $filtered")
+                val filtered = response.data.filter { it.id in bookmarks }
+                println(" Filtered Bookmarked News: $filtered")
 
-                    _newsState.value = ResultState.Success(filtered)
-                } else {
-                    println(" Empty response data")
-                    _newsState.value = ResultState.Error("No data found")
-                }
+                _newsState.value = ResultState.Success(filtered.reversed())
             } catch (e: Exception) {
                 println(" Exception: ${e.message}")
                 _newsState.value = ResultState.Error(e.message ?: "Unknown error")
