@@ -12,21 +12,31 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import org.kotlin.multiplatform.newsapp.model.ApiResponse
 import org.kotlin.multiplatform.newsapp.model.Comment
 import org.kotlin.multiplatform.newsapp.model.CommentRequest
 import org.kotlin.multiplatform.newsapp.model.CommentResponse
+import org.kotlin.multiplatform.newsapp.model.Community
+import org.kotlin.multiplatform.newsapp.model.CommunityResponse
+import org.kotlin.multiplatform.newsapp.model.CreateCommunityRequest
 import org.kotlin.multiplatform.newsapp.model.CreateNewsRequest
 import org.kotlin.multiplatform.newsapp.model.LikeCount
 import org.kotlin.multiplatform.newsapp.model.LikeRequest
 import org.kotlin.multiplatform.newsapp.model.LikeStatusResponse
 import org.kotlin.multiplatform.newsapp.model.NewsPost
 import org.kotlin.multiplatform.newsapp.model.NewsPostResponse
+import org.kotlin.multiplatform.newsapp.model.UpdateCommunityRequest
+import org.kotlin.multiplatform.newsapp.repository.CommunityRepository
+import org.kotlin.multiplatform.newsapp.utils.getCurrentFormattedDate
 import java.io.File
+import javax.swing.UIManager.put
 
 fun Route.configureRouting(newsRepository: NewsRepository,
-                           userRepo: UserRepository) {
+                           userRepo: UserRepository,
+                           communityRepository: CommunityRepository
+) {
 
         route("/news") {
             post {
@@ -450,7 +460,91 @@ fun Route.configureRouting(newsRepository: NewsRepository,
         }
 
 
+    route("/community") {
 
+        post {
+            try {
+                val request = call.receive<CreateCommunityRequest>()
+                val community = Community(
+                    name = request.name,
+                    description = request.description,
+                    authorName=request.authorName,
+                    imageUrl = request.imageUrl,
+                    isPrivate = request.isPrivate
+                )
+                val saved = communityRepository.addCommunity(community)
+                call.respond(HttpStatusCode.Created, CommunityResponse(true, "Community created", listOf(saved)))
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, CommunityResponse<Community>(false, "Error: ${e.localizedMessage}"))
+            }
+        }
+
+        get {
+            try {
+                val all = communityRepository.getAllCommunities()
+                call.respond(HttpStatusCode.OK, CommunityResponse(true, "Communities fetched", all))
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, CommunityResponse<Community>(false, "Error: ${e.localizedMessage}"))
+            }
+        }
+
+        get("/{id}") {
+            val id = call.parameters["id"]
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, CommunityResponse<Community>(false, "Missing ID"))
+                return@get
+            }
+
+            val community = communityRepository.getCommunityById(id)
+            if (community != null) {
+                call.respond(HttpStatusCode.OK, CommunityResponse(true, "Community found", listOf(community)))
+            } else {
+                call.respond(HttpStatusCode.NotFound, CommunityResponse<Community>(false, "Community not found"))
+            }
+        }
+
+        put("/{id}") {
+            val id = call.parameters["id"]
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, CommunityResponse<Community>(false, "Missing ID"))
+                return@put
+            }
+
+            val request = call.receive<UpdateCommunityRequest>()
+            val updated = Community(
+                id = id,
+                name = request.name,
+                description = request.description,
+                imageUrl = request.imageUrl,
+                authorName=request.authorName,
+                createdAt = getCurrentFormattedDate(),
+                isPrivate = request.isPrivate
+
+            )
+
+            val success = communityRepository.updateCommunity(id, updated)
+            if (success) {
+                call.respond(HttpStatusCode.OK, CommunityResponse(true, "Community updated", listOf(updated)))
+            } else {
+                call.respond(HttpStatusCode.NotFound, CommunityResponse<Community>(false, "Community not found"))
+            }
+        }
+
+        delete("/{id}") {
+            val id = call.parameters["id"]
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, CommunityResponse<Community>(false, "Missing ID"))
+                return@delete
+            }
+
+            val success = communityRepository.deleteCommunity(id)
+            if (success) {
+                call.respond(HttpStatusCode.OK, CommunityResponse<Community>(true, "Community deleted"))
+            } else {
+                call.respond(HttpStatusCode.NotFound, CommunityResponse<Community>(false, "Community not found"))
+            }
+        }
+    }
 
 
 }

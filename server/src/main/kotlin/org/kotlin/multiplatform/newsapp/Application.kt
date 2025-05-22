@@ -8,6 +8,8 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
+import org.kotlin.multiplatform.newsapp.repository.CommunityRepository
+import org.kotlin.multiplatform.newsapp.repository.CommunityRepositoryImpl
 
 fun main() {
     embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
@@ -27,10 +29,9 @@ fun Application.module() {
 
     val newsRepository = NewsRepository()
     val userRepository=UserRepository()
-
-
+    val communityRepository = CommunityRepositoryImpl()
     routing {
-    configureRouting(newsRepository,userRepository)
+    configureRouting(newsRepository,userRepository,communityRepository)
         authRoutes(userRepository)
     }
 
