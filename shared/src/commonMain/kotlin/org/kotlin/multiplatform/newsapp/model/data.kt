@@ -44,7 +44,8 @@ data class User(
     val email: String,
     val password: String, // In real-world apps, always hash passwords!
     val isAdmin: Boolean = false, //  flag for admin
-    val createdAt: String = getCurrentFormattedDate()
+    val createdAt: String = getCurrentFormattedDate(),
+    val profileImageUrl: String? = null // <-- Optional image URL
 )
 @Serializable
 data class SignUpRequest(
@@ -53,12 +54,30 @@ data class SignUpRequest(
     val password: String,
     val isAdmin: Boolean
 )
-
+@Serializable
+data class UserResponseData(
+    val id: String,
+    val name: String,
+    val email: String,
+    val profileImage: String? = null // Optional field
+)
 
 @Serializable
 data class LoginRequest(
     val email: String,
     val password: String
+)
+@Serializable
+data class ChangePasswordRequest(
+    val userId: String,
+    val oldPassword: String,
+    val newPassword: String
+)
+
+@Serializable
+data class EditProfileRequest(
+    val name: String?,
+    val profileImageUrl: String?
 )
 
 @Serializable
@@ -82,7 +101,11 @@ data class UserResponse(
     val message: String,
     val data: User? = null
 )
-
+@Serializable
+data class DeleteAccountRequest(
+    val email: String,
+    val password: String
+)
 @Serializable
 data class CommentRequest(val userId: String, val content: String,val userName: String)
 

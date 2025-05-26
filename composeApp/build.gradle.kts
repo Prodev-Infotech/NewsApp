@@ -54,7 +54,7 @@ kotlin {
     
     sourceSets {
         val desktopMain by getting
-        
+
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
@@ -90,6 +90,45 @@ kotlin {
             implementation(libs.kotlinx.coroutines.swing)
         }
     }
+
+//    sourceSets {
+//        val desktopMain by getting
+//        val androidMain by getting
+//        val commonMain by getting
+//
+//        androidMain.dependencies {
+//            implementation(compose.preview)
+//            implementation(libs.androidx.activity.compose)
+//            implementation(libs.androidx.lifecycle.viewmodel)
+//            implementation(libs.androidx.navigation.compose)
+//        }
+//
+//        commonMain.dependencies {
+//            implementation(compose.runtime)
+//            implementation(compose.foundation)
+//            implementation(compose.material)
+//            implementation(compose.ui)
+//            implementation(compose.components.resources)
+//            implementation(compose.components.uiToolingPreview)
+//
+//            // Remove Android-only libraries from here!
+//
+//            // Only add multiplatform safe libs here:
+//            implementation(compose.material3)
+//            implementation(libs.screen.size)
+//            implementation(libs.media.kamel.image.default)
+//            implementation(libs.kotlin.reflect)
+//            implementation(libs.kamel.decoder.image.bitmap)
+//
+//            // Be sure projects.shared is not circular here
+//            implementation(projects.shared)
+//        }
+//
+//        desktopMain.dependencies {
+//            implementation(compose.desktop.currentOs)
+//            implementation(libs.kotlinx.coroutines.swing)
+//        }
+//    }
 }
 
 android {

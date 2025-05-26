@@ -15,13 +15,18 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import org.kotlin.multiplatform.newsapp.model.ApiResponse
+import org.kotlin.multiplatform.newsapp.model.BaseResponse
 import org.kotlin.multiplatform.newsapp.model.Comment
 import org.kotlin.multiplatform.newsapp.model.CommentRequest
 import org.kotlin.multiplatform.newsapp.model.CommentResponse
 import org.kotlin.multiplatform.newsapp.model.Community
 import org.kotlin.multiplatform.newsapp.model.CommunityResponse
+import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
 import org.kotlin.multiplatform.newsapp.model.CreateCommunityRequest
 import org.kotlin.multiplatform.newsapp.model.CreateNewsRequest
+import org.kotlin.multiplatform.newsapp.model.JoinApproveRequest
+import org.kotlin.multiplatform.newsapp.model.JoinLeaveRequest
+import org.kotlin.multiplatform.newsapp.model.JoinRequestResponse
 import org.kotlin.multiplatform.newsapp.model.LikeCount
 import org.kotlin.multiplatform.newsapp.model.LikeRequest
 import org.kotlin.multiplatform.newsapp.model.LikeStatusResponse
@@ -475,7 +480,7 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                 val saved = communityRepository.addCommunity(community)
                 call.respond(HttpStatusCode.Created, CommunityResponse(true, "Community created", listOf(saved)))
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, CommunityResponse<Community>(false, "Error: ${e.localizedMessage}"))
+                call.respond(HttpStatusCode.InternalServerError, CommunityResponse<Community>(status = false, message = "Error: ${e.localizedMessage}"))
             }
         }
 
@@ -487,6 +492,7 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                 call.respond(HttpStatusCode.InternalServerError, CommunityResponse<Community>(false, "Error: ${e.localizedMessage}"))
             }
         }
+
 
         get("/{id}") {
             val id = call.parameters["id"]
@@ -544,7 +550,137 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                 call.respond(HttpStatusCode.NotFound, CommunityResponse<Community>(false, "Community not found"))
             }
         }
+
+        post("/join") {
+            val request = call.receive<JoinLeaveRequest>()
+            try {
+                val success = communityRepository.joinCommunity(request.user, request.communityId)
+                if (success) {
+                    call.respond(HttpStatusCode.OK, BaseResponse(true, "Joined community"))
+                } else {
+                    call.respond(HttpStatusCode.Conflict, BaseResponse(false, "Already joined or error"))
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, BaseResponse(false, "Error: ${e.localizedMessage}"))
+            }
+        }
+
+        post("/leave") {
+            val request = call.receive<JoinLeaveRequest>()
+            try {
+                val success = communityRepository.leaveCommunity(request.user, request.communityId)
+                if (success) {
+                    call.respond(HttpStatusCode.OK, BaseResponse(true, "Left community"))
+                } else {
+                    call.respond(HttpStatusCode.NotFound, BaseResponse(false, "Not part of community"))
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, BaseResponse(false, "Error: ${e.localizedMessage}"))
+            }
+        }
     }
 
+    get("/communities") {
+        val userId = call.request.queryParameters["userId"]
+        if (userId == null) {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                CommunityResponse<CommunityWithJoinStatus>(false, "Missing userId")
+            )
+            return@get
+        }
+
+        try {
+            val allCommunities = communityRepository.getAllCommunities()
+            val joinedIds = communityRepository.getJoinedCommunityIdsForUser(userId)
+            val requestedIds = communityRepository.getRequestedCommunityIdsForUser(userId)
+
+            val responseList = allCommunities.map { community ->
+                val status = when {
+                    community.id in joinedIds -> "Joined"
+                    community.id in requestedIds -> "Requested"
+                    else -> "Join"
+                }
+
+                CommunityWithJoinStatus(
+                    id = community.id,
+                    name = community.name,
+                    description = community.description,
+                    imageUrl = community.imageUrl,
+                    authorName = community.authorName,
+                    createdAt = community.createdAt,
+                    isPrivate = community.isPrivate,
+                    joinStatus = status
+                )
+            }
+
+            call.respond(
+                HttpStatusCode.OK,
+                CommunityResponse(true, "Fetched with join status", responseList)
+            )
+        } catch (e: Exception) {
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                CommunityResponse<CommunityWithJoinStatus>(false, "Error: ${e.localizedMessage}")
+            )
+        }
+    }
+    get("/admin/community/requests") {
+        val communityId = call.request.queryParameters["communityId"]?.trim()
+
+        if (!communityId.isNullOrEmpty()) {
+            val requests = communityRepository.getPendingRequestsForCommunity(communityId)
+            call.respond(
+                HttpStatusCode.OK,
+                JoinRequestResponse(
+                    success = true,
+                    message = if (requests.isNotEmpty()) "Pending requests" else "No pending requests found",
+                    requests = requests
+                )
+            )
+        } else {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                JoinRequestResponse(
+                    success = false,
+                    message = "Missing or empty communityId",
+                    requests = emptyList()
+                )
+            )
+        }
+    }
+
+    post("/admin/community/approve") {
+        val approval = call.receive<JoinApproveRequest>()
+        val success = communityRepository.approveRequest(approval.userId, approval.communityId)
+
+        if (success) {
+            call.respond(
+                status = HttpStatusCode.OK,
+                message = BaseResponse(true, "Request approved")
+            )
+        } else {
+            call.respond(
+                status = HttpStatusCode.BadRequest,
+                message = BaseResponse(false, "Approval failed")
+            )
+        }
+    }
+    post("/admin/community/reject") {
+        val rejection = call.receive<JoinLeaveRequest>()
+        try {
+            val success = communityRepository.rejectRequest(rejection.user, rejection.communityId)
+            if (success) {
+                call.respond(HttpStatusCode.OK, BaseResponse(true, "Request rejected"))
+            } else {
+                call.respond(HttpStatusCode.BadRequest, BaseResponse(false, "Rejection failed"))
+            }
+        } catch (e: Exception) {
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                BaseResponse(false, "Error: ${e.localizedMessage}")
+            )
+        }
+    }
 
 }

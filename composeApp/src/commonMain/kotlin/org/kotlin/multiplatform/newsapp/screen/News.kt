@@ -27,9 +27,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -100,33 +97,7 @@ fun NewsScreen(
 ) {
     val updateLabelsState by newsViewmodel.newsState
     var newsList by remember { mutableStateOf<List<NewsPost>>(emptyList()) }
-    var showDialog by remember { mutableStateOf(false) }
 
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Log Out") },
-            text = { Text("Are you sure you want to log out?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    SessionUtil.logout()
-                    showDialog = false
-
-                    navController.navigate("Login") {
-                        popUpTo("main") { inclusive = true } // remove "main" from back stack
-                        launchSingleTop = true
-                    }
-                }) {
-                    Text("Yes")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("No")
-                }
-            }
-        )
-    }
     when (updateLabelsState) {
 
             is ResultState.Success -> {
@@ -162,17 +133,6 @@ fun NewsScreen(
                         color = Color.White
                     )
                 },
-                actions = {
-                    Icon(
-                        painter = painterResource(Res.drawable.ic_logout),
-                        contentDescription = "Log Out",
-                        modifier = Modifier.clickable {
-                            showDialog = true
-                        },
-                        tint = Color.White
-                    )
-                },
-
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF757575)
                 )
@@ -548,10 +508,9 @@ fun NewsItem(
                                                 newsViewmodel.toggleCommentLike(commentId, userId)
                                             }
                                         ) {
-                                            Icon(
-                                                imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                            Image(
+                                                painter = if (isLiked) painterResource(Res.drawable.ic_fill_like) else painterResource(Res.drawable.ic_unfill_like),
                                                 contentDescription = "Like comment",
-                                                tint = if (isLiked) Color.Red else Color.Gray,
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         }

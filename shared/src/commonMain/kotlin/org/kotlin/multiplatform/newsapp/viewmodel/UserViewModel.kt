@@ -4,10 +4,13 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import dev.icerock.moko.mvvm.viewmodel.ViewModel
 import kotlinx.coroutines.launch
+import org.kotlin.multiplatform.newsapp.model.ChangePasswordRequest
+import org.kotlin.multiplatform.newsapp.model.EditProfileRequest
 import org.kotlin.multiplatform.newsapp.model.LoginRequest
 import org.kotlin.multiplatform.newsapp.model.ResultState
 import org.kotlin.multiplatform.newsapp.model.SignUpRequest
 import org.kotlin.multiplatform.newsapp.model.User
+import org.kotlin.multiplatform.newsapp.model.UserResponseData
 import org.kotlin.multiplatform.newsapp.network.KtorfitServiceCreator
 import org.kotlin.multiplatform.newsapp.utils.SessionUtil
 import org.kotlin.multiplatform.newsapp.utils.baseUrl
@@ -19,6 +22,18 @@ class UserViewModel : ViewModel() {
 
     private val _signUpState = mutableStateOf<ResultState<User>>(ResultState.Initial)
     val signUpState: State<ResultState<User>> get() = _signUpState
+
+    private val _getUserState = mutableStateOf<ResultState<UserResponseData>>(ResultState.Initial)
+    val getUserState: State<ResultState<UserResponseData>> get() = _getUserState
+
+    private val _updateProfileState = mutableStateOf<ResultState<User>>(ResultState.Initial)
+    val updateProfileState: State<ResultState<User>> get() = _updateProfileState
+
+    private val _changePasswordState = mutableStateOf<ResultState<Boolean>>(ResultState.Initial)
+    val changePasswordState: State<ResultState<Boolean>> get() = _changePasswordState
+
+    private val _deleteAccountState = mutableStateOf<ResultState<Boolean>>(ResultState.Initial)
+    val deleteAccountState: State<ResultState<Boolean>> get() = _deleteAccountState
 
     private val ktorfitService = KtorfitServiceCreator(baseUrl)
 
@@ -33,8 +48,7 @@ class UserViewModel : ViewModel() {
                     val user = response.data
                     if (user != null) {
                         _signUpState.value = ResultState.Success(user)
-                        SessionUtil.saveUserId(user.id)
-                        SessionUtil.saveUserName(user.name)
+                        SessionUtil.saveUser(user)
                     } else {
                         _signUpState.value = ResultState.Error("User data is null")
                     }
@@ -58,8 +72,7 @@ class UserViewModel : ViewModel() {
                     val user = response.data
                     if (user != null) {
                         _loginState.value = ResultState.Success(user)
-                        SessionUtil.saveUserId(user.id)
-                        SessionUtil.saveUserName(user.name)
+                        SessionUtil.saveUser(user)
 
                     } else {
                         _loginState.value = ResultState.Error("User data is null")
@@ -72,4 +85,71 @@ class UserViewModel : ViewModel() {
             }
         }
     }
+    fun getUserById(userId: String) {
+        _getUserState.value = ResultState.Loading
+
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.getUserById(userId)
+                if (response.status && response.data != null) {
+                    _getUserState.value = ResultState.Success(response.data)
+                } else {
+                    _getUserState.value = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _getUserState.value = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+    fun editProfile(updatedUser: EditProfileRequest) {
+        _updateProfileState.value = ResultState.Loading
+
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.updateUser(updatedUser)
+                if (response.status && response.data != null) {
+                    _updateProfileState.value = ResultState.Success(response.data)
+                } else {
+                    _updateProfileState.value = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _updateProfileState.value = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+    fun changePassword(request: ChangePasswordRequest) {
+        _changePasswordState.value = ResultState.Loading
+
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.changePassword(request)
+                if (response.status) {
+                    _changePasswordState.value = ResultState.Success(true)
+                } else {
+                    _changePasswordState.value = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _changePasswordState.value = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+    fun deleteAccount(userId: String) {
+        _deleteAccountState.value = ResultState.Loading
+
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.deleteUser(userId)
+                if (response.status) {
+                    _deleteAccountState.value = ResultState.Success(true)
+                    SessionUtil.logout() // Optional: clear session
+                } else {
+                    _deleteAccountState.value = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _deleteAccountState.value = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+
 }

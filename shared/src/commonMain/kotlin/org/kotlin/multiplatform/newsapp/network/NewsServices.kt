@@ -1,14 +1,23 @@
 package org.kotlin.multiplatform.newsapp.network
 
 import de.jensklingenberg.ktorfit.http.Body
+import de.jensklingenberg.ktorfit.http.DELETE
 import de.jensklingenberg.ktorfit.http.GET
 import de.jensklingenberg.ktorfit.http.POST
+import de.jensklingenberg.ktorfit.http.PUT
 import de.jensklingenberg.ktorfit.http.Path
 import de.jensklingenberg.ktorfit.http.Query
 import org.kotlin.multiplatform.newsapp.model.ApiResponse
+import org.kotlin.multiplatform.newsapp.model.BaseResponse
+import org.kotlin.multiplatform.newsapp.model.ChangePasswordRequest
 import org.kotlin.multiplatform.newsapp.model.Comment
 import org.kotlin.multiplatform.newsapp.model.CommentRequest
 import org.kotlin.multiplatform.newsapp.model.CommentResponse
+import org.kotlin.multiplatform.newsapp.model.Community
+import org.kotlin.multiplatform.newsapp.model.CommunityResponse
+import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
+import org.kotlin.multiplatform.newsapp.model.EditProfileRequest
+import org.kotlin.multiplatform.newsapp.model.JoinLeaveRequest
 import org.kotlin.multiplatform.newsapp.model.LikeCount
 import org.kotlin.multiplatform.newsapp.model.LikeRequest
 import org.kotlin.multiplatform.newsapp.model.LikeStatusResponse
@@ -17,6 +26,7 @@ import org.kotlin.multiplatform.newsapp.model.NewsPost
 import org.kotlin.multiplatform.newsapp.model.NewsPostResponse
 import org.kotlin.multiplatform.newsapp.model.SignUpRequest
 import org.kotlin.multiplatform.newsapp.model.User
+import org.kotlin.multiplatform.newsapp.model.UserResponseData
 
 interface NewsServices {
 
@@ -31,6 +41,18 @@ interface NewsServices {
 
     @POST("login")
     suspend fun login(@Body request: LoginRequest): ApiResponse<User>
+
+    @GET("user/{userId}")
+    suspend fun getUserById(@Path("userId") id: String): ApiResponse<UserResponseData>
+
+    @PUT("user/update")
+    suspend fun updateUser(@Body user: EditProfileRequest): ApiResponse<User>
+
+    @POST("auth/change-password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): ApiResponse<Unit>
+
+    @DELETE("auth/delete/{userId}")
+    suspend fun deleteUser(@Path("userId") id: String): ApiResponse<Unit>
 
     @GET("news/{id}/comments")
     suspend fun getComments(@Path("id") newsId: String): CommentResponse<Comment>
@@ -75,4 +97,18 @@ interface NewsServices {
         @Path("id") commentId: String,
         @Query("userId") userId: String
     ): CommentResponse<LikeStatusResponse>
+
+    @GET("community")
+    suspend fun getAllCommunities(): CommunityResponse<CommunityWithJoinStatus>
+
+    @GET("communities")
+    suspend fun getAllCommunitiesWithJoinStatus(
+        @Query("userId") userId: String
+    ): CommunityResponse<CommunityWithJoinStatus>
+
+    @POST("community/join")
+    suspend fun joinCommunity(@Body request: JoinLeaveRequest): BaseResponse
+
+    @POST("community/leave")
+    suspend fun leaveCommunity(@Body request: JoinLeaveRequest): BaseResponse
 }

@@ -27,5 +27,36 @@ class UserRepository {
     fun userExists(userId: String): Boolean {
         return userList.any { it.id == userId }
     }
+    fun updatePassword(userId: String, oldPassword: String, newPassword: String): Boolean {
+        val index = users.indexOfFirst { it.id == userId }
+        if (index != -1) {
+            val user = users[index]
+            return if (user.password == oldPassword) {
+                users[index] = user.copy(password = newPassword)
+                true
+            } else {
+                false // old password mismatch
+            }
+        }
+        return false
+    }
+
+    fun deleteUser(email: String): Boolean {
+        return users.removeIf { it.email == email }
+    }
+
+    fun getUserByEmail(email: String): User? {
+        return users.find { it.email == email }
+    }
+
+    fun updateUser(updatedUser: User): Boolean {
+        val index = users.indexOfFirst { it.email == updatedUser.email }
+        return if (index != -1) {
+            users[index] = updatedUser
+            true
+        } else {
+            false
+        }
+    }
 
 }

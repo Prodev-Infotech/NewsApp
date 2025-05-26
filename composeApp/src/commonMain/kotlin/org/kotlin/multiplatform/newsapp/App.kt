@@ -1,12 +1,15 @@
 package org.kotlin.multiplatform.newsapp
 
 import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.kotlin.multiplatform.newsapp.nvigation.Routes
+import org.kotlin.multiplatform.newsapp.screen.EditProfileScreen
 import org.kotlin.multiplatform.newsapp.screen.LoginScreen
 import org.kotlin.multiplatform.newsapp.screen.MainScreen
 import org.kotlin.multiplatform.newsapp.screen.NewsDetailScreen
@@ -34,6 +37,10 @@ fun App() {
         }
         composable("main") {
             MainScreen(navController = navController)
+        }
+        composable("editProfile"){
+            val userViewModel:UserViewModel= viewModel()
+                EditProfileScreen(navController=navController,userViewModel=userViewModel)
         }
 
         composable(

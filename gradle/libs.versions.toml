@@ -11,7 +11,7 @@ androidx-espresso-core = "3.6.1"
 androidx-lifecycle = "2.8.4"
 androidx-material = "1.12.0"
 androidx-test-junit = "1.2.1"
-compose-multiplatform = "1.7.3"
+compose-multiplatform = "1.8.0"
 junit = "4.13.2"
 kamelDecoderImageBitmap = "1.0.5"
 kamelImageDefaultVersion = "1.0.5"
@@ -31,9 +31,11 @@ ktorfit = "2.5.0"
 ktorVersion = "3.1.2"
 mvvm = "0.16.1"
 ksp = "2.1.10-1.0.31"
-
-
-
+accompanistPermissionsVersion = "0.34.0"
+activityCompose = "1.8.2"
+uiGraphicsAndroidVersion = "1.8.2"
+runtimeLivedataVersion = "1.8.1"
+lifecycleRuntimeKtxVersion = "2.9.0"
 
 
 [libraries]
@@ -57,6 +59,9 @@ logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
+androidx-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "runtimeLivedataVersion" }
+lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtxVersion" }
+
 
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorSerializationKotlinxJson" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
@@ -72,6 +77,9 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorVer
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorVersion" }
 moko-mvvm-compose = { module = "dev.icerock.moko:mvvm-compose", version.ref = "mvvm" }
 mvvm-core = { module = "dev.icerock.moko:mvvm-core", version.ref = "mvvm" }
+google-accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissionsVersion" }
+activity-compose-v182 = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+#androidx-ui-graphics-android = { group = "androidx.compose.ui", name = "ui-graphics-android", version.ref = "uiGraphicsAndroidVersion" }
 
 
 
