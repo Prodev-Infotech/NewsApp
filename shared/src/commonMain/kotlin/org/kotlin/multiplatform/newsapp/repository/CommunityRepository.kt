@@ -15,8 +15,7 @@ interface CommunityRepository {
     suspend fun leaveCommunity(user: User, communityId: String): Boolean
     suspend fun getJoinedCommunityIdsForUser(userId: String): List<String>
     suspend fun getRequestedCommunityIdsForUser(userId: String): List<String>
-    suspend fun getPendingRequests(): List<JoinRequest>
     suspend fun approveRequest(userId: String, communityId: String): Boolean
-    suspend fun getPendingRequestsForCommunity(communityId: String): List<JoinRequest>
-    suspend fun rejectRequest(user: User, communityId: String): Boolean
+    suspend fun rejectRequest(userId: String, communityId: String): Boolean
+    suspend fun getAllRequestsForCommunity(communityId: String):List<JoinRequest>
 }

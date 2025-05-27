@@ -31,7 +31,6 @@ class CommunityViewModel : ViewModel() {
     val pendingRequestsState: State<ResultState<List<JoinRequest>>> get() = _pendingRequestsState
 
     private val ktorfitService: KtorfitServiceCreator by lazy {
-        println("Creating KtorFitServiceCreator with baseUrl: ${baseUrl}")
         KtorfitServiceCreator(baseUrl)
     }
     init {
@@ -47,7 +46,6 @@ class CommunityViewModel : ViewModel() {
         _communityState.value = ResultState.Loading
         viewModelScope.launch {
             try {
-                println("Calling getAllCommunitiesWithJoinStatus with userId: $userId")
                 val response = ktorfitService.api.getAllCommunitiesWithJoinStatus(userId)
                 if (response.status) {
                     _communityState.value = ResultState.Success(response.data.reversed())
@@ -68,7 +66,7 @@ class CommunityViewModel : ViewModel() {
             try {
                 val request = JoinLeaveRequest(user, communityId)
                 val response = ktorfitService.api.joinCommunity(request)
-                if (response.success) {
+                if (response.status) {
                     _joinCommunityState.value = ResultState.Success(response)
                     println("Joined community successfully: ${response.message}")
                     fetchCommunities(SessionUtil.getUserId().toString())
@@ -88,7 +86,7 @@ class CommunityViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val response = ktorfitService.api.leaveCommunity(JoinLeaveRequest(user, communityId))
-                if (response.success) {
+                if (response.status) {
                     _joinLeaveState.value = ResultState.Success(response)
                 } else {
                     _joinLeaveState.value = ResultState.Error(response.message)

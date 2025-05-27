@@ -1,5 +1,6 @@
 package org.kotlin.multiplatform.newsapp.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.kotlin.multiplatform.newsapp.utils.generateId
 import org.kotlin.multiplatform.newsapp.utils.getCurrentFormattedDate
@@ -57,7 +58,10 @@ data class CommunityWithJoinStatus(
 )
 
 @Serializable
-data class BaseResponse(val success: Boolean, val message: String)
+data class BaseResponse(
+    @SerialName("success") val status: Boolean = false,
+    val message: String = ""
+)
 
 @Serializable
 data class JoinRequest(

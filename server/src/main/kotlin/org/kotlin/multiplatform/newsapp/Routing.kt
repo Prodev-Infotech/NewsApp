@@ -36,391 +36,408 @@ import org.kotlin.multiplatform.newsapp.model.UpdateCommunityRequest
 import org.kotlin.multiplatform.newsapp.repository.CommunityRepository
 import org.kotlin.multiplatform.newsapp.utils.getCurrentFormattedDate
 import java.io.File
-import javax.swing.UIManager.put
 
-fun Route.configureRouting(newsRepository: NewsRepository,
-                           userRepo: UserRepository,
-                           communityRepository: CommunityRepository
+fun Route.configureRouting(
+    newsRepository: NewsRepository,
+    userRepo: UserRepository,
+    communityRepository: CommunityRepository,
 ) {
 
-        route("/news") {
-            post {
-                try {
-                    val request  = call.receive<CreateNewsRequest>()
+    route("/news") {
+        post {
+            try {
+                val request = call.receive<CreateNewsRequest>()
 
-                    val news = NewsPost(
-                        title = request.title,
-                        details = request.details,
-                        link = request.link,
-                        channelName = request.channelName,
-                        imageUrl = request.imageUrl
-                        // id, createdAt, isBookMark will use default values
-                    )
-                    val savedNews = newsRepository.addNews(news)
-                    call.respond(
-                        HttpStatusCode.Created,
-                        NewsPostResponse(
-                            status = true,
-                            message = "News post created successfully!",
-                            data = listOf(savedNews)
-                        )
-                    )
-                    println("save New:-->$savedNews")
-                } catch (e: Exception) {
-                    call.respond(
-                        HttpStatusCode.InternalServerError,
-                        NewsPostResponse(
-                            status=false,
-                            message="Error: ${e.localizedMessage}",
-                            data = emptyList()
-                        )
-                    )
-                }
-            }
-            get {
-                try {
-                    val newsList = newsRepository.getAllNews()
-                    println("Fetched News: $newsList")
-
-                    call.respond(
-                        HttpStatusCode.OK,
-                        NewsPostResponse(
-                            status = true,
-                            message = "News fetched successfully",
-                            data = newsList // newsList is a List<NewsPost>
-                        )
-                    )
-                } catch (e: Exception) {
-                    call.respond(
-                        HttpStatusCode.InternalServerError,
-                        mapOf(
-                            "status" to false,
-                            "message" to "Error: ${e.localizedMessage}"
-                        )
-                    )
-                }
-            }
-
-
-            delete("/{id}") {
-                val postId = call.parameters["id"] // Extract the postId from the URL parameters
-
-                if (postId != null) {
-                    try {
-                        // Try to delete the news post from the repository using the postId
-                        val deletedPost = newsRepository.deleteNews(postId)
-
-                        if (deletedPost != null) {
-                            // If the post is successfully deleted, respond with a success message
-                            call.respond(
-                                HttpStatusCode.OK,
-                                NewsPostResponse(
-                                    status = true,
-                                    message = "News post deleted successfully",
-                                    data = emptyList() // No data to return, so we send an empty list
-                                )
-                            )
-                        } else {
-                            // If the post was not found, respond with an error message
-                            call.respond(
-                                HttpStatusCode.NotFound,
-                                NewsPostResponse(
-                                    status = false,
-                                    message = "Post not found",
-                                    data = emptyList()
-                                )
-                            )
-                        }
-                    } catch (e: Exception) {
-                        // If an error occurs, respond with an internal server error message
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            NewsPostResponse(
-                                status = false,
-                                message = "Error: ${e.localizedMessage}",
-                                data = emptyList()
-                            )
-                        )
-                    }
-                } else {
-                    // If the postId is missing or invalid, respond with a bad request error
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        NewsPostResponse(
-                            status = false,
-                            message = "Missing or invalid post ID",
-                            data = emptyList()
-                        )
-                    )
-                }
-            }
-
-            get("/{id}") {
-                val postId = call.parameters["id"] // Extract the postId from the URL parameters
-
-                if (postId != null) {
-                    try {
-                        // Try to get the specific news post by its ID from the repository
-                        val newsPost = newsRepository.getNewsById(postId)
-
-                        if (newsPost != null) {
-                            // If the post is found, respond with the news data
-                            call.respond(
-                                HttpStatusCode.OK,
-                                NewsPostResponse(
-                                    status = true,
-                                    message = "News fetched successfully",
-                                    data = listOf(newsPost) // Wrap the single newsPost in a list
-                                )
-                            )
-                        } else {
-                            // If the post is not found, respond with a 404 Not Found
-                            call.respond(
-                                HttpStatusCode.NotFound,
-                                NewsPostResponse(
-                                    status = false,
-                                    message = "News post not found",
-                                    data = emptyList()
-                                )
-                            )
-                        }
-                    } catch (e: Exception) {
-                        // If an error occurs, respond with an internal server error
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            NewsPostResponse(
-                                status = false,
-                                message = "Error: ${e.localizedMessage}",
-                                data = emptyList()
-                            )
-                        )
-                    }
-                } else {
-                    // If the postId is missing or invalid, respond with a bad request error
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        NewsPostResponse(
-                            status = false,
-                            message = "Missing or invalid post ID",
-                            data = emptyList()
-                        )
-                    )
-                }
-            }
-
-            // POST /news/{id}/comment
-            post("/{id}/comment") {
-                val newsId = call.parameters["id"]
-                if (newsId == null) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        CommentResponse<Comment>(
-                            status = false,
-                            message = "Invalid news ID",
-                            data = emptyList()
-                        )
-                    )
-                    return@post
-                }
-
-                val request = call.receive<CommentRequest>()
-                val comment = Comment(
-                    newsId = newsId,
-                    userId = request.userId,
-                    content = request.content,
-                    userName = request.userName
+                val news = NewsPost(
+                    title = request.title,
+                    details = request.details,
+                    link = request.link,
+                    channelName = request.channelName,
+                    imageUrl = request.imageUrl
+                    // id, createdAt, isBookMark will use default values
                 )
-                val savedComment = newsRepository.addComment(newsId, comment)
-
+                val savedNews = newsRepository.addNews(news)
                 call.respond(
                     HttpStatusCode.Created,
-                    CommentResponse(
+                    NewsPostResponse(
                         status = true,
-                        message = "Comment added successfully",
-                        data = listOf(savedComment)
+                        message = "News post created successfully!",
+                        data = listOf(savedNews)
+                    )
+                )
+                println("save New:-->$savedNews")
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    NewsPostResponse(
+                        status = false,
+                        message = "Error: ${e.localizedMessage}",
+                        data = emptyList()
                     )
                 )
             }
+        }
+        get {
+            try {
+                val newsList = newsRepository.getAllNews()
+                println("Fetched News: $newsList")
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    NewsPostResponse(
+                        status = true,
+                        message = "News fetched successfully",
+                        data = newsList // newsList is a List<NewsPost>
+                    )
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf(
+                        "status" to false,
+                        "message" to "Error: ${e.localizedMessage}"
+                    )
+                )
+            }
+        }
+
+
+        delete("/{id}") {
+            val postId = call.parameters["id"] // Extract the postId from the URL parameters
+
+            if (postId != null) {
+                try {
+                    // Try to delete the news post from the repository using the postId
+                    val deletedPost = newsRepository.deleteNews(postId)
+
+                    if (deletedPost != null) {
+                        // If the post is successfully deleted, respond with a success message
+                        call.respond(
+                            HttpStatusCode.OK,
+                            NewsPostResponse(
+                                status = true,
+                                message = "News post deleted successfully",
+                                data = emptyList() // No data to return, so we send an empty list
+                            )
+                        )
+                    } else {
+                        // If the post was not found, respond with an error message
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            NewsPostResponse(
+                                status = false,
+                                message = "Post not found",
+                                data = emptyList()
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    // If an error occurs, respond with an internal server error message
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        NewsPostResponse(
+                            status = false,
+                            message = "Error: ${e.localizedMessage}",
+                            data = emptyList()
+                        )
+                    )
+                }
+            } else {
+                // If the postId is missing or invalid, respond with a bad request error
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    NewsPostResponse(
+                        status = false,
+                        message = "Missing or invalid post ID",
+                        data = emptyList()
+                    )
+                )
+            }
+        }
+
+        get("/{id}") {
+            val postId = call.parameters["id"] // Extract the postId from the URL parameters
+
+            if (postId != null) {
+                try {
+                    // Try to get the specific news post by its ID from the repository
+                    val newsPost = newsRepository.getNewsById(postId)
+
+                    if (newsPost != null) {
+                        // If the post is found, respond with the news data
+                        call.respond(
+                            HttpStatusCode.OK,
+                            NewsPostResponse(
+                                status = true,
+                                message = "News fetched successfully",
+                                data = listOf(newsPost) // Wrap the single newsPost in a list
+                            )
+                        )
+                    } else {
+                        // If the post is not found, respond with a 404 Not Found
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            NewsPostResponse(
+                                status = false,
+                                message = "News post not found",
+                                data = emptyList()
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    // If an error occurs, respond with an internal server error
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        NewsPostResponse(
+                            status = false,
+                            message = "Error: ${e.localizedMessage}",
+                            data = emptyList()
+                        )
+                    )
+                }
+            } else {
+                // If the postId is missing or invalid, respond with a bad request error
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    NewsPostResponse(
+                        status = false,
+                        message = "Missing or invalid post ID",
+                        data = emptyList()
+                    )
+                )
+            }
+        }
+
+        // POST /news/{id}/comment
+        post("/{id}/comment") {
+            val newsId = call.parameters["id"]
+            if (newsId == null) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    CommentResponse<Comment>(
+                        status = false,
+                        message = "Invalid news ID",
+                        data = emptyList()
+                    )
+                )
+                return@post
+            }
+
+            val request = call.receive<CommentRequest>()
+            val comment = Comment(
+                newsId = newsId,
+                userId = request.userId,
+                content = request.content,
+                userName = request.userName
+            )
+            val savedComment = newsRepository.addComment(newsId, comment)
+
+            call.respond(
+                HttpStatusCode.Created,
+                CommentResponse(
+                    status = true,
+                    message = "Comment added successfully",
+                    data = listOf(savedComment)
+                )
+            )
+        }
 
 // GET /news/{id}/comments
-            get("/{id}/comments") {
-                val newsId = call.parameters["id"]
-                if (newsId == null) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        CommentResponse<Comment>(
-                            status = false,
-                            message = "Invalid news ID",
-                            data = emptyList()
-                        )
-                    )
-                    return@get
-                }
-
-                val comments = newsRepository.getComments(newsId)
+        get("/{id}/comments") {
+            val newsId = call.parameters["id"]
+            if (newsId == null) {
                 call.respond(
-                    HttpStatusCode.OK,
-                    CommentResponse(
-                        status = true,
-                        message = "Comments fetched successfully",
-                        data = comments
+                    HttpStatusCode.BadRequest,
+                    CommentResponse<Comment>(
+                        status = false,
+                        message = "Invalid news ID",
+                        data = emptyList()
                     )
                 )
+                return@get
             }
+
+            val comments = newsRepository.getComments(newsId)
+            call.respond(
+                HttpStatusCode.OK,
+                CommentResponse(
+                    status = true,
+                    message = "Comments fetched successfully",
+                    data = comments
+                )
+            )
+        }
 
 // POST /news/{id}/like
-            post("/{id}/like") {
-                val newsId = call.parameters["id"]
-                if (newsId == null) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        CommentResponse<LikeStatusResponse>(
-                            status = false,
-                            message = "Invalid news ID",
-                            data = emptyList()
-                        )
-                    )
-                    return@post
-                }
-
-                val request = call.receive<LikeRequest>()
-                val liked = newsRepository.toggleLike(newsId, request.userId)
-
+        post("/{id}/like") {
+            val newsId = call.parameters["id"]
+            if (newsId == null) {
                 call.respond(
-                    HttpStatusCode.OK,
-                    CommentResponse(
-                        status = true,
-                        message = if (liked) "Liked" else "Unliked",
-                        data = listOf(LikeStatusResponse(liked))
+                    HttpStatusCode.BadRequest,
+                    CommentResponse<LikeStatusResponse>(
+                        status = false,
+                        message = "Invalid news ID",
+                        data = emptyList()
                     )
                 )
+                return@post
             }
+
+            val request = call.receive<LikeRequest>()
+            val liked = newsRepository.toggleLike(newsId, request.userId)
+
+            call.respond(
+                HttpStatusCode.OK,
+                CommentResponse(
+                    status = true,
+                    message = if (liked) "Liked" else "Unliked",
+                    data = listOf(LikeStatusResponse(liked))
+                )
+            )
+        }
 
 // GET /news/{id}/likes
-            get("/{id}/likes") {
-                val newsId = call.parameters["id"]
-                if (newsId == null) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        CommentResponse<LikeCount>(
-                            status = false,
-                            message = "Invalid news ID",
-                            data = emptyList()
-                        )
-                    )
-                    return@get
-                }
-
-                val count = newsRepository.getLikes(newsId)
+        get("/{id}/likes") {
+            val newsId = call.parameters["id"]
+            if (newsId == null) {
                 call.respond(
-                    HttpStatusCode.OK,
-                    CommentResponse(
-                        status = true,
-                        message = "Like count fetched",
-                        data = listOf(LikeCount(count))
+                    HttpStatusCode.BadRequest,
+                    CommentResponse<LikeCount>(
+                        status = false,
+                        message = "Invalid news ID",
+                        data = emptyList()
                     )
                 )
+                return@get
             }
 
-            get("/{id}/like-status") {
-                val newsId = call.parameters["id"]
-                val userId = call.request.queryParameters["userId"]
+            val count = newsRepository.getLikes(newsId)
+            call.respond(
+                HttpStatusCode.OK,
+                CommentResponse(
+                    status = true,
+                    message = "Like count fetched",
+                    data = listOf(LikeCount(count))
+                )
+            )
+        }
 
-                if (newsId == null || userId.isNullOrEmpty()) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        CommentResponse<LikeStatusResponse>(
-                            status = false,
-                            message = "Missing news ID or user ID",
-                            data = emptyList()
-                        )
-                    )
-                    return@get
-                }
+        get("/{id}/like-status") {
+            val newsId = call.parameters["id"]
+            val userId = call.request.queryParameters["userId"]
 
-                val liked = newsRepository.getUserLikeStatus(newsId, userId)
-
+            if (newsId == null || userId.isNullOrEmpty()) {
                 call.respond(
-                    HttpStatusCode.OK,
-                    CommentResponse(
-                        status = true,
-                        message = "User like status fetched",
-                        data = listOf(LikeStatusResponse(liked))
+                    HttpStatusCode.BadRequest,
+                    CommentResponse<LikeStatusResponse>(
+                        status = false,
+                        message = "Missing news ID or user ID",
+                        data = emptyList()
                     )
                 )
+                return@get
             }
 
-            post("/comments/{id}/like") {
-                val commentId = call.parameters["id"]
-                if (commentId == null) {
-                    call.respond(HttpStatusCode.BadRequest, CommentResponse<LikeStatusResponse>(
+            val liked = newsRepository.getUserLikeStatus(newsId, userId)
+
+            call.respond(
+                HttpStatusCode.OK,
+                CommentResponse(
+                    status = true,
+                    message = "User like status fetched",
+                    data = listOf(LikeStatusResponse(liked))
+                )
+            )
+        }
+
+        post("/comments/{id}/like") {
+            val commentId = call.parameters["id"]
+            if (commentId == null) {
+                call.respond(
+                    HttpStatusCode.BadRequest, CommentResponse<LikeStatusResponse>(
                         status = false, message = "Invalid comment ID", data = emptyList()
-                    ))
-                    return@post
-                }
+                    )
+                )
+                return@post
+            }
 
-                val request = call.receive<LikeRequest>()
-                val liked = newsRepository.toggleCommentLike(commentId, request.userId)
+            val request = call.receive<LikeRequest>()
+            val liked = newsRepository.toggleCommentLike(commentId, request.userId)
 
-                call.respond(HttpStatusCode.OK, CommentResponse(
+            call.respond(
+                HttpStatusCode.OK, CommentResponse(
                     status = true,
                     message = if (liked) "Comment liked" else "Comment unliked",
                     data = listOf(LikeStatusResponse(liked))
-                ))
-            }
-            get("/comments/{id}/likes") {
-                val commentId = call.parameters["id"]
-                if (commentId == null) {
-                    call.respond(HttpStatusCode.BadRequest, CommentResponse<LikeCount>(
+                )
+            )
+        }
+        get("/comments/{id}/likes") {
+            val commentId = call.parameters["id"]
+            if (commentId == null) {
+                call.respond(
+                    HttpStatusCode.BadRequest, CommentResponse<LikeCount>(
                         status = false, message = "Invalid comment ID", data = emptyList()
-                    ))
-                    return@get
-                }
+                    )
+                )
+                return@get
+            }
 
-                val count = newsRepository.getCommentLikeCount(commentId)
-                call.respond(HttpStatusCode.OK, CommentResponse(
+            val count = newsRepository.getCommentLikeCount(commentId)
+            call.respond(
+                HttpStatusCode.OK, CommentResponse(
                     status = true,
                     message = "Comment like count fetched",
                     data = listOf(LikeCount(count))
-                ))
+                )
+            )
+        }
+
+        get("/comments/{id}/like-status") {
+            val commentId = call.parameters["id"]
+            val userId = call.request.queryParameters["userId"]
+
+            if (commentId == null || userId.isNullOrEmpty()) {
+                call.respond(
+                    HttpStatusCode.BadRequest, CommentResponse<LikeStatusResponse>(
+                        status = false,
+                        message = "Missing comment ID or user ID",
+                        data = emptyList()
+                    )
+                )
+                return@get
             }
 
-            get("/comments/{id}/like-status") {
-                val commentId = call.parameters["id"]
-                val userId = call.request.queryParameters["userId"]
-
-                if (commentId == null || userId.isNullOrEmpty()) {
-                    call.respond(HttpStatusCode.BadRequest, CommentResponse<LikeStatusResponse>(
-                        status = false, message = "Missing comment ID or user ID", data = emptyList()
-                    ))
-                    return@get
-                }
-
-                val liked = newsRepository.getUserCommentLikeStatus(commentId, userId)
-                call.respond(HttpStatusCode.OK, CommentResponse(
+            val liked = newsRepository.getUserCommentLikeStatus(commentId, userId)
+            call.respond(
+                HttpStatusCode.OK, CommentResponse(
                     status = true,
                     message = "User like status fetched for comment",
                     data = listOf(LikeStatusResponse(liked))
-                ))
-            }
+                )
+            )
+        }
 
-            post("/upload/image") {
-                val multipart = call.receiveMultipart()
-                var fileName: String? = null
-                multipart.forEachPart { part ->
-                    if (part is PartData.FileItem && part.name == "image") {
-                        fileName = part.originalFileName ?: "unnamed.jpg"
-                        val bytes = part.streamProvider().readBytes()
-                        File("uploads/$fileName").writeBytes(bytes)
-                    }
-                    part.dispose()
+        post("/upload/image") {
+            val multipart = call.receiveMultipart()
+            var fileName: String? = null
+            multipart.forEachPart { part ->
+                if (part is PartData.FileItem && part.name == "image") {
+                    fileName = part.originalFileName ?: "unnamed.jpg"
+                    val bytes = part.streamProvider().readBytes()
+                    File("uploads/$fileName").writeBytes(bytes)
                 }
-                if (fileName != null) {
-                    call.respond(ApiResponse(true, "File uploaded", fileName))
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, ApiResponse(false, "No file received",data = null))
-                }
+                part.dispose()
             }
+            if (fileName != null) {
+                call.respond(ApiResponse(true, "File uploaded", fileName))
+            } else {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse(false, "No file received", data = null)
+                )
+            }
+        }
 //            post("/upload/image") {
 //                val multipart = call.receiveMultipart()
 //                var fileName: String? = null
@@ -449,20 +466,23 @@ fun Route.configureRouting(newsRepository: NewsRepository,
 //                }
 //            }
 
-            get("/image/{filename}") {
-                val filename = call.parameters["filename"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing filename")
-                val file = File("uploads/$filename")
+        get("/image/{filename}") {
+            val filename = call.parameters["filename"] ?: return@get call.respond(
+                HttpStatusCode.BadRequest,
+                "Missing filename"
+            )
+            val file = File("uploads/$filename")
 
-                if (!file.exists()) {
-                    call.respond(HttpStatusCode.NotFound, "File not found")
-                    return@get
-                }
-
-                // Respond with the image bytes and proper content type
-                call.respondFile(file)
+            if (!file.exists()) {
+                call.respond(HttpStatusCode.NotFound, "File not found")
+                return@get
             }
 
+            // Respond with the image bytes and proper content type
+            call.respondFile(file)
         }
+
+    }
 
 
     route("/community") {
@@ -473,14 +493,23 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                 val community = Community(
                     name = request.name,
                     description = request.description,
-                    authorName=request.authorName,
+                    authorName = request.authorName,
                     imageUrl = request.imageUrl,
                     isPrivate = request.isPrivate
                 )
                 val saved = communityRepository.addCommunity(community)
-                call.respond(HttpStatusCode.Created, CommunityResponse(true, "Community created", listOf(saved)))
+                call.respond(
+                    HttpStatusCode.Created,
+                    CommunityResponse(true, "Community created", listOf(saved))
+                )
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, CommunityResponse<Community>(status = false, message = "Error: ${e.localizedMessage}"))
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    CommunityResponse<Community>(
+                        status = false,
+                        message = "Error: ${e.localizedMessage}"
+                    )
+                )
             }
         }
 
@@ -489,7 +518,10 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                 val all = communityRepository.getAllCommunities()
                 call.respond(HttpStatusCode.OK, CommunityResponse(true, "Communities fetched", all))
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, CommunityResponse<Community>(false, "Error: ${e.localizedMessage}"))
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    CommunityResponse<Community>(false, "Error: ${e.localizedMessage}")
+                )
             }
         }
 
@@ -497,22 +529,34 @@ fun Route.configureRouting(newsRepository: NewsRepository,
         get("/{id}") {
             val id = call.parameters["id"]
             if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, CommunityResponse<Community>(false, "Missing ID"))
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    CommunityResponse<Community>(false, "Missing ID")
+                )
                 return@get
             }
 
             val community = communityRepository.getCommunityById(id)
             if (community != null) {
-                call.respond(HttpStatusCode.OK, CommunityResponse(true, "Community found", listOf(community)))
+                call.respond(
+                    HttpStatusCode.OK,
+                    CommunityResponse(true, "Community found", listOf(community))
+                )
             } else {
-                call.respond(HttpStatusCode.NotFound, CommunityResponse<Community>(false, "Community not found"))
+                call.respond(
+                    HttpStatusCode.NotFound,
+                    CommunityResponse<Community>(false, "Community not found")
+                )
             }
         }
 
         put("/{id}") {
             val id = call.parameters["id"]
             if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, CommunityResponse<Community>(false, "Missing ID"))
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    CommunityResponse<Community>(false, "Missing ID")
+                )
                 return@put
             }
 
@@ -522,7 +566,7 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                 name = request.name,
                 description = request.description,
                 imageUrl = request.imageUrl,
-                authorName=request.authorName,
+                authorName = request.authorName,
                 createdAt = getCurrentFormattedDate(),
                 isPrivate = request.isPrivate
 
@@ -530,24 +574,39 @@ fun Route.configureRouting(newsRepository: NewsRepository,
 
             val success = communityRepository.updateCommunity(id, updated)
             if (success) {
-                call.respond(HttpStatusCode.OK, CommunityResponse(true, "Community updated", listOf(updated)))
+                call.respond(
+                    HttpStatusCode.OK,
+                    CommunityResponse(true, "Community updated", listOf(updated))
+                )
             } else {
-                call.respond(HttpStatusCode.NotFound, CommunityResponse<Community>(false, "Community not found"))
+                call.respond(
+                    HttpStatusCode.NotFound,
+                    CommunityResponse<Community>(false, "Community not found")
+                )
             }
         }
 
         delete("/{id}") {
             val id = call.parameters["id"]
             if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, CommunityResponse<Community>(false, "Missing ID"))
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    CommunityResponse<Community>(false, "Missing ID")
+                )
                 return@delete
             }
 
             val success = communityRepository.deleteCommunity(id)
             if (success) {
-                call.respond(HttpStatusCode.OK, CommunityResponse<Community>(true, "Community deleted"))
+                call.respond(
+                    HttpStatusCode.OK,
+                    CommunityResponse<Community>(true, "Community deleted")
+                )
             } else {
-                call.respond(HttpStatusCode.NotFound, CommunityResponse<Community>(false, "Community not found"))
+                call.respond(
+                    HttpStatusCode.NotFound,
+                    CommunityResponse<Community>(false, "Community not found")
+                )
             }
         }
 
@@ -558,10 +617,16 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                 if (success) {
                     call.respond(HttpStatusCode.OK, BaseResponse(true, "Joined community"))
                 } else {
-                    call.respond(HttpStatusCode.Conflict, BaseResponse(false, "Already joined or error"))
+                    call.respond(
+                        HttpStatusCode.Conflict,
+                        BaseResponse(false, "Already joined or error")
+                    )
                 }
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, BaseResponse(false, "Error: ${e.localizedMessage}"))
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    BaseResponse(false, "Error: ${e.localizedMessage}")
+                )
             }
         }
 
@@ -572,10 +637,16 @@ fun Route.configureRouting(newsRepository: NewsRepository,
                 if (success) {
                     call.respond(HttpStatusCode.OK, BaseResponse(true, "Left community"))
                 } else {
-                    call.respond(HttpStatusCode.NotFound, BaseResponse(false, "Not part of community"))
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        BaseResponse(false, "Not part of community")
+                    )
                 }
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, BaseResponse(false, "Error: ${e.localizedMessage}"))
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    BaseResponse(false, "Error: ${e.localizedMessage}")
+                )
             }
         }
     }
@@ -625,30 +696,6 @@ fun Route.configureRouting(newsRepository: NewsRepository,
             )
         }
     }
-    get("/admin/community/requests") {
-        val communityId = call.request.queryParameters["communityId"]?.trim()
-
-        if (!communityId.isNullOrEmpty()) {
-            val requests = communityRepository.getPendingRequestsForCommunity(communityId)
-            call.respond(
-                HttpStatusCode.OK,
-                JoinRequestResponse(
-                    success = true,
-                    message = if (requests.isNotEmpty()) "Pending requests" else "No pending requests found",
-                    requests = requests
-                )
-            )
-        } else {
-            call.respond(
-                HttpStatusCode.BadRequest,
-                JoinRequestResponse(
-                    success = false,
-                    message = "Missing or empty communityId",
-                    requests = emptyList()
-                )
-            )
-        }
-    }
 
     post("/admin/community/approve") {
         val approval = call.receive<JoinApproveRequest>()
@@ -666,19 +713,54 @@ fun Route.configureRouting(newsRepository: NewsRepository,
             )
         }
     }
+
     post("/admin/community/reject") {
-        val rejection = call.receive<JoinLeaveRequest>()
+        val rejection = call.receive<JoinApproveRequest>()
         try {
-            val success = communityRepository.rejectRequest(rejection.user, rejection.communityId)
+            val success = communityRepository.rejectRequest(rejection.userId, rejection.communityId)
             if (success) {
-                call.respond(HttpStatusCode.OK, BaseResponse(true, "Request rejected"))
+                call.respond(BaseResponse(status = true, message = "Request rejected"))
             } else {
-                call.respond(HttpStatusCode.BadRequest, BaseResponse(false, "Rejection failed"))
+                call.respond(BaseResponse(status = false, message = "Rejection failed"))
             }
+        } catch (e: Exception) {
+            call.respond(BaseResponse(status = false, message = "Error: ${e.localizedMessage}"))
+        }
+    }
+
+    get("/admin/community/all-requests") {
+        val communityId = call.request.queryParameters["communityId"]?.trim()
+
+        if (communityId.isNullOrEmpty()) {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                JoinRequestResponse(
+                    success = false,
+                    message = "Missing or empty communityId",
+                    requests = emptyList()
+                )
+            )
+            return@get
+        }
+
+        try {
+            val requests = communityRepository.getAllRequestsForCommunity(communityId)
+            call.respond(
+                HttpStatusCode.OK,
+                JoinRequestResponse(
+                    success = true,
+                    message = if (requests.isNotEmpty()) "All requests fetched" else "No requests found",
+                    requests = requests
+                )
+            )
         } catch (e: Exception) {
             call.respond(
                 HttpStatusCode.InternalServerError,
-                BaseResponse(false, "Error: ${e.localizedMessage}")
+                JoinRequestResponse(
+                    success = false,
+                    message = "Error: ${e.localizedMessage}",
+                    requests = emptyList()
+                )
             )
         }
     }

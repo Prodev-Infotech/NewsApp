@@ -31,52 +31,36 @@ class CommunityRepositoryImpl : CommunityRepository {
     override suspend fun deleteCommunity(id: String): Boolean =
         communities.removeAll  { it.id == id }
 
-    private val pendingRequests = mutableListOf<JoinRequest>() // or fetch from DB
-
-//    override suspend fun getPendingRequestsForCommunity(communityId: String): List<JoinRequest> {
-//        return pendingRequests.filter { it.communityId == communityId }
-//    }
-
-    override suspend fun getPendingRequestsForCommunity(communityId: String): List<JoinRequest> {
-        return joinRequests.filter {
-            it.communityId == communityId && it.joinStatus == "pending"
-        }
-    }
 
 
     private val joinRequests = mutableListOf<JoinRequest>()
     private val communityMembers = mutableSetOf<Pair<String, String>>() // userId to communityId
+override suspend fun joinCommunity(user: User, communityId: String): Boolean {
+    val community = communities.find { it.id == communityId } ?: return false
 
-    override suspend fun joinCommunity(user: User, communityId: String): Boolean {
-        val community = communities.find { it.id == communityId } ?: return false
-        val alreadyJoined = communityMembers.contains(user.id to communityId)
-        val alreadyRequested = joinRequests.any {
-            it.userId == user.id && it.communityId == communityId && it.joinStatus == "pending"
-        }
-
-        if (community.isPrivate) {
-            if (!alreadyRequested) {
-                joinRequests.add(
-                    JoinRequest(
-                        id = generateId(),
-                        userId = user.id,
-                        communityId = communityId,
-                        userName = user.name,
-                        communityName = community.name,
-                        joinStatus = "pending",
-                        requestedAt = getCurrentFormattedDate(),
-                        profileImageUrl = user.profileImageUrl
-                    )
-                )
-            }
-            return !alreadyRequested
-        } else {
-            if (!alreadyJoined) {
-                communityMembers.add(user.id to communityId)
-            }
-            return !alreadyJoined
-        }
+    val alreadyJoined = communityMembers.contains(user.id to communityId)
+    val alreadyRequested = joinRequests.any {
+        it.userId == user.id && it.communityId == communityId && it.joinStatus == "pending"
     }
+
+    if (!alreadyRequested && !alreadyJoined) {
+        joinRequests.add(
+            JoinRequest(
+                id = generateId(),
+                userId = user.id,
+                communityId = communityId,
+                userName = user.name,
+                communityName = community.name,
+                joinStatus = "pending",
+                requestedAt = getCurrentFormattedDate(),
+                profileImageUrl = user.profileImageUrl
+            )
+        )
+        return true
+    }
+
+    return false
+}
 
     override suspend fun leaveCommunity(user: User, communityId: String): Boolean {
         return communityMembers.remove(user.id to communityId)
@@ -91,20 +75,15 @@ class CommunityRepositoryImpl : CommunityRepository {
             .filter { it.userId == userId && it.joinStatus == "pending" }
             .map { it.communityId }
     }
-    override suspend fun rejectRequest(user: User, communityId: String): Boolean {
-        val request = pendingRequests.find { it.userId == user.id && it.communityId == communityId }
-        return if (request != null) {
-            pendingRequests.remove(request)
-            // No need to add anywhere — just discard the request
-            true
-        } else {
-            false
-        }
+
+    override suspend fun rejectRequest(userId: String, communityId: String): Boolean {
+        val request = joinRequests.find {
+            it.userId == userId && it.communityId == communityId && it.joinStatus == "pending"
+        } ?: return false
+        joinRequests.remove(request)
+        return true
     }
 
-    override suspend fun getPendingRequests(): List<JoinRequest> {
-        return joinRequests.filter { it.joinStatus == "pending" }
-    }
 
     override suspend fun approveRequest(userId: String, communityId: String): Boolean {
         val request = joinRequests.find {
@@ -115,6 +94,9 @@ class CommunityRepositoryImpl : CommunityRepository {
         joinRequests.add(request.copy(joinStatus = "approved"))
         communityMembers.add(userId to communityId)
         return true
+    }
+    override suspend fun getAllRequestsForCommunity(communityId: String): List<JoinRequest> {
+        return joinRequests.filter { it.communityId == communityId }
     }
 
 }
