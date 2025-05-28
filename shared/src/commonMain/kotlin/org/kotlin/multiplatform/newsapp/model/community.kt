@@ -57,7 +57,7 @@ data class CommunityWithJoinStatus(
     val id: String,
     val name: String,
     val description: String,
-    val imageUrl: String,
+    val imageUrl: String?,
     val authorName: String,
     val createdAt: String,
     val isPrivate: Boolean,

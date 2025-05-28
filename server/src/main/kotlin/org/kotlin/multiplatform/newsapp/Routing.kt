@@ -22,7 +22,6 @@ import org.kotlin.multiplatform.newsapp.model.CommentResponse
 import org.kotlin.multiplatform.newsapp.model.Community
 import org.kotlin.multiplatform.newsapp.model.CommunityByIdResponse
 import org.kotlin.multiplatform.newsapp.model.CommunityResponse
-import org.kotlin.multiplatform.newsapp.model.CommunitySingleResponse
 import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
 import org.kotlin.multiplatform.newsapp.model.CreateCommunityRequest
 import org.kotlin.multiplatform.newsapp.model.CreateNewsRequest

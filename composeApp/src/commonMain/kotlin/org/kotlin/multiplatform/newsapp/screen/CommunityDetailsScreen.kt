@@ -117,7 +117,7 @@ fun HeaderSection(
     communityViewModel:CommunityViewModel,
     navController: NavController
 ) {
-    val imageResource = asyncPainterResource(community.imageUrl)
+    val imageResource = asyncPainterResource(community.imageUrl?:"")
 
     Box(
         modifier = Modifier
