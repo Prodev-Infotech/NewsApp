@@ -38,6 +38,13 @@ data class CommunityResponse<T>(
     val message: String,
     val data: List<T> = emptyList()
 )
+@Serializable
+data class CommunityByIdResponse<T>(
+    val success: Boolean,
+    val message: String,
+    val data: T? = null
+)
+
 
 
 @Serializable
@@ -50,7 +57,7 @@ data class CommunityWithJoinStatus(
     val id: String,
     val name: String,
     val description: String,
-    val imageUrl: String?,
+    val imageUrl: String,
     val authorName: String,
     val createdAt: String,
     val isPrivate: Boolean,

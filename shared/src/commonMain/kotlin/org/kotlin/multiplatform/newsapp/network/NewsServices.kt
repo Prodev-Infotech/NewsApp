@@ -14,6 +14,7 @@ import org.kotlin.multiplatform.newsapp.model.Comment
 import org.kotlin.multiplatform.newsapp.model.CommentRequest
 import org.kotlin.multiplatform.newsapp.model.CommentResponse
 import org.kotlin.multiplatform.newsapp.model.Community
+import org.kotlin.multiplatform.newsapp.model.CommunityByIdResponse
 import org.kotlin.multiplatform.newsapp.model.CommunityResponse
 import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
 import org.kotlin.multiplatform.newsapp.model.EditProfileRequest
@@ -105,6 +106,12 @@ interface NewsServices {
     suspend fun getAllCommunitiesWithJoinStatus(
         @Query("userId") userId: String
     ): CommunityResponse<CommunityWithJoinStatus>
+
+    @GET("communityById")
+    suspend fun getSingleCommunityWithJoinStatus(
+        @Query("userId") userId: String,
+        @Query("communityId") communityId: String
+    ): CommunityByIdResponse<CommunityWithJoinStatus>
 
     @POST("community/join")
     suspend fun joinCommunity(@Body request: JoinLeaveRequest): BaseResponse

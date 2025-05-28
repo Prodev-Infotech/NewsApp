@@ -8,13 +8,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.kotlin.multiplatform.newsapp.nvigation.Routes
+import org.kotlin.multiplatform.newsapp.screen.CommunityDetailsScreen
 import org.kotlin.multiplatform.newsapp.screen.EditProfileScreen
 import org.kotlin.multiplatform.newsapp.screen.LoginScreen
 import org.kotlin.multiplatform.newsapp.screen.MainScreen
 import org.kotlin.multiplatform.newsapp.screen.NewsDetailScreen
 import org.kotlin.multiplatform.newsapp.screen.SignUpScreen
 import org.kotlin.multiplatform.newsapp.screen.SplashScreen
+import org.kotlin.multiplatform.newsapp.viewmodel.CommunityViewModel
 import org.kotlin.multiplatform.newsapp.viewmodel.NewsViewmodel
 import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 
@@ -23,6 +24,7 @@ import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 fun App() {
     val navController = rememberNavController()
     val newsViewmodel = remember { NewsViewmodel() }
+    val communityViewModel = remember { CommunityViewModel() }
 
     NavHost(navController = navController, startDestination = "Splash") {
 
@@ -50,6 +52,15 @@ fun App() {
             val newsId = backStackEntry.arguments?.getString("news_id") ?: ""
             println("NavController News ID:-$newsId")
             NewsDetailScreen(newsId, newsViewmodel = newsViewmodel, navController = navController)
+
+        }
+        composable(
+            route="community/detail/{community_id}",
+            arguments = listOf(navArgument("community_id"){ type= NavType.StringType})
+        ){backStackEntry ->
+            val communityId = backStackEntry.arguments?.getString("community_id") ?: ""
+            println("NavController Community ID:-$communityId")
+            CommunityDetailsScreen(communityId, communityViewModel = communityViewModel, navController = navController)
 
         }
 

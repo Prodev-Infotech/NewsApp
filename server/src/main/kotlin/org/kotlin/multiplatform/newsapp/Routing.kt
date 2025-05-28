@@ -20,7 +20,9 @@ import org.kotlin.multiplatform.newsapp.model.Comment
 import org.kotlin.multiplatform.newsapp.model.CommentRequest
 import org.kotlin.multiplatform.newsapp.model.CommentResponse
 import org.kotlin.multiplatform.newsapp.model.Community
+import org.kotlin.multiplatform.newsapp.model.CommunityByIdResponse
 import org.kotlin.multiplatform.newsapp.model.CommunityResponse
+import org.kotlin.multiplatform.newsapp.model.CommunitySingleResponse
 import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
 import org.kotlin.multiplatform.newsapp.model.CreateCommunityRequest
 import org.kotlin.multiplatform.newsapp.model.CreateNewsRequest
@@ -693,6 +695,61 @@ fun Route.configureRouting(
             call.respond(
                 HttpStatusCode.InternalServerError,
                 CommunityResponse<CommunityWithJoinStatus>(false, "Error: ${e.localizedMessage}")
+            )
+        }
+    }
+    get("/communityById") {
+        val userId = call.request.queryParameters["userId"]
+        val communityId = call.request.queryParameters["communityId"]
+
+        if (userId == null || communityId == null) {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                CommunityByIdResponse<CommunityWithJoinStatus>(false, "Missing userId or communityId")
+            )
+            return@get
+        }
+        val allCommunities = communityRepository.getAllCommunities()
+        val matchedCommunity = allCommunities.find { it.id == communityId }
+
+        if (matchedCommunity == null) {
+            call.respond(
+                HttpStatusCode.NotFound,
+                CommunityByIdResponse<CommunityWithJoinStatus>(false, "Community not found")
+            )
+            return@get
+        }
+
+        try {
+            val joinedIds = communityRepository.getJoinedCommunityIdsForUser(userId)
+            val requestedIds = communityRepository.getRequestedCommunityIdsForUser(userId)
+
+            val joinStatus = when {
+                communityId in joinedIds -> "Joined"
+                communityId in requestedIds -> "Requested"
+                else -> "Join"
+            }
+
+            val response = CommunityWithJoinStatus(
+                id = matchedCommunity.id,
+                name = matchedCommunity.name,
+                description = matchedCommunity.description,
+                imageUrl = matchedCommunity.imageUrl,
+                authorName = matchedCommunity.authorName,
+                createdAt = matchedCommunity.createdAt,
+                isPrivate = matchedCommunity.isPrivate,
+                joinStatus = joinStatus
+            )
+
+            call.respond(
+                HttpStatusCode.OK,
+                CommunityByIdResponse(true, "Community fetched", response)
+            )
+
+        } catch (e: Exception) {
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                CommunityByIdResponse<CommunityWithJoinStatus>(false, "Error: ${e.localizedMessage}")
             )
         }
     }

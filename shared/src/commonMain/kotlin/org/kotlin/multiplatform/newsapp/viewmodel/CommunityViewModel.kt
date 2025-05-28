@@ -57,7 +57,32 @@ class CommunityViewModel : ViewModel() {
             }
         }
     }
+    private val _singleCommunityState = mutableStateOf<ResultState<CommunityWithJoinStatus>>(ResultState.Initial)
+    val singleCommunityState: State<ResultState<CommunityWithJoinStatus>> get() = _singleCommunityState
+    fun fetchSingleCommunity( communityId: String,userId: String) {
+        println("fetchSingleCommunity...userId:-$userId  and communityId:->$communityId")
+        if (userId.isBlank() || communityId.isBlank()) {
+            _singleCommunityState.value = ResultState.Error("Missing user ID or community ID")
+            return
+        }
 
+        _singleCommunityState.value = ResultState.Loading
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.getSingleCommunityWithJoinStatus(userId, communityId)
+                println("fetchSingleCommunity response:->$response")
+                if (response.success && response.data != null) {
+                    _singleCommunityState.value = ResultState.Success(response.data)
+                } else {
+                    _singleCommunityState.value = ResultState.Error(response.message)
+                    println("fetchSingleCommunity response else:->${response.message}")
+                }
+            } catch (e: Exception) {
+                _singleCommunityState.value = ResultState.Error(e.message ?: "Unknown error")
+                println("fetchSingleCommunity response error:->${e.message}")
+            }
+        }
+    }
 
     fun joinCommunity(user: User, communityId: String) {
         _joinCommunityState.value = ResultState.Loading
@@ -70,6 +95,12 @@ class CommunityViewModel : ViewModel() {
                     _joinCommunityState.value = ResultState.Success(response)
                     println("Joined community successfully: ${response.message}")
                     fetchCommunities(SessionUtil.getUserId().toString())
+                    val currentState = _singleCommunityState.value
+                    if (currentState is ResultState.Success) {
+                        val updatedCommunity = currentState.data.copy(joinStatus = "Requested") // or whatever the API returns
+                        _singleCommunityState.value = ResultState.Success(updatedCommunity)
+                    }
+
                 } else {
                     _joinCommunityState.value = ResultState.Error(response.message)
                     println("Failed to join community: ${response.message}")

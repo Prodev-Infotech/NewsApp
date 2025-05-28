@@ -17,8 +17,10 @@ class CommunityRepositoryImpl : CommunityRepository {
 
     override suspend fun getAllCommunities(): List<Community> = communities
 
+
     override suspend fun getCommunityById(id: String): Community? =
         communities.find { it.id == id }
+
 
     override suspend fun updateCommunity(id: String, updated: Community): Boolean {
         val index = communities.indexOfFirst { it.id == id }
