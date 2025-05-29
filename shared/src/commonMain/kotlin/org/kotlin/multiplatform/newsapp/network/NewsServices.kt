@@ -7,6 +7,8 @@ import de.jensklingenberg.ktorfit.http.POST
 import de.jensklingenberg.ktorfit.http.PUT
 import de.jensklingenberg.ktorfit.http.Path
 import de.jensklingenberg.ktorfit.http.Query
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.statement.HttpResponse
 import org.kotlin.multiplatform.newsapp.model.ApiResponse
 import org.kotlin.multiplatform.newsapp.model.BaseResponse
 import org.kotlin.multiplatform.newsapp.model.ChangePasswordRequest
@@ -17,6 +19,7 @@ import org.kotlin.multiplatform.newsapp.model.Community
 import org.kotlin.multiplatform.newsapp.model.CommunityByIdResponse
 import org.kotlin.multiplatform.newsapp.model.CommunityResponse
 import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
+import org.kotlin.multiplatform.newsapp.model.CreatePostRequest
 import org.kotlin.multiplatform.newsapp.model.EditProfileRequest
 import org.kotlin.multiplatform.newsapp.model.JoinLeaveRequest
 import org.kotlin.multiplatform.newsapp.model.LikeCount
@@ -25,6 +28,8 @@ import org.kotlin.multiplatform.newsapp.model.LikeStatusResponse
 import org.kotlin.multiplatform.newsapp.model.LoginRequest
 import org.kotlin.multiplatform.newsapp.model.NewsPost
 import org.kotlin.multiplatform.newsapp.model.NewsPostResponse
+import org.kotlin.multiplatform.newsapp.model.Post
+import org.kotlin.multiplatform.newsapp.model.PostResponse
 import org.kotlin.multiplatform.newsapp.model.SignUpRequest
 import org.kotlin.multiplatform.newsapp.model.User
 import org.kotlin.multiplatform.newsapp.model.UserResponseData
@@ -118,4 +123,22 @@ interface NewsServices {
 
     @POST("community/leave")
     suspend fun leaveCommunity(@Body request: JoinLeaveRequest): BaseResponse
+
+    @POST("news/upload/image")
+    suspend fun uploadImage(
+        @Body body: MultiPartFormDataContent
+    ): ApiResponse<String>
+
+    // Get image from server as a byte stream
+    @GET("news/image/{filename}")
+    suspend fun getImage(
+        @Path("filename") filename: String
+    ): ApiResponse<String>  // ✅ Change from HttpResponse to ApiResponse<String>
+    @POST("createPost")
+    suspend fun createPost(@Body request: CreatePostRequest): PostResponse<Post>
+
+    @GET("communities/{communityId}/posts")
+    suspend fun getPostsByCommunity(
+        @Path("communityId") communityId: String
+    ): PostResponse<List<Post>>
 }

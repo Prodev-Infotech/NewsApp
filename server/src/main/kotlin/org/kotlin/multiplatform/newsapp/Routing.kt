@@ -4,6 +4,11 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
 import io.ktor.http.content.streamProvider
+import io.ktor.server.http.content.files
+import io.ktor.server.http.content.static
+import io.ktor.server.plugins.origin
+import io.ktor.server.request.host
+import io.ktor.server.request.port
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
@@ -25,6 +30,7 @@ import org.kotlin.multiplatform.newsapp.model.CommunityResponse
 import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
 import org.kotlin.multiplatform.newsapp.model.CreateCommunityRequest
 import org.kotlin.multiplatform.newsapp.model.CreateNewsRequest
+import org.kotlin.multiplatform.newsapp.model.CreatePostRequest
 import org.kotlin.multiplatform.newsapp.model.JoinApproveRequest
 import org.kotlin.multiplatform.newsapp.model.JoinLeaveRequest
 import org.kotlin.multiplatform.newsapp.model.JoinRequestResponse
@@ -33,6 +39,7 @@ import org.kotlin.multiplatform.newsapp.model.LikeRequest
 import org.kotlin.multiplatform.newsapp.model.LikeStatusResponse
 import org.kotlin.multiplatform.newsapp.model.NewsPost
 import org.kotlin.multiplatform.newsapp.model.NewsPostResponse
+import org.kotlin.multiplatform.newsapp.model.PostResponse
 import org.kotlin.multiplatform.newsapp.model.UpdateCommunityRequest
 import org.kotlin.multiplatform.newsapp.repository.CommunityRepository
 import org.kotlin.multiplatform.newsapp.utils.getCurrentFormattedDate
@@ -439,52 +446,50 @@ fun Route.configureRouting(
                 )
             }
         }
-//            post("/upload/image") {
-//                val multipart = call.receiveMultipart()
-//                var fileName: String? = null
+//        get("/image/{filename}") {
+//            val filename = call.parameters["filename"] ?: return@get call.respond(
+//                HttpStatusCode.BadRequest,
+//                "Missing filename"
+//            )
+//            val file = File("uploads/$filename")
 //
-//                // Clear the uploads folder before saving new image
-//                val uploadsDir = File("uploads")
-//                if (uploadsDir.exists()) {
-//                    uploadsDir.listFiles()?.forEach { it.delete() } // Delete each file
-//                } else {
-//                    uploadsDir.mkdirs() // Create directory if not present
-//                }
-//
-//                multipart.forEachPart { part ->
-//                    if (part is PartData.FileItem && part.name == "image") {
-//                        fileName = part.originalFileName ?: "unnamed.jpg"
-//                        val bytes = part.streamProvider().readBytes()
-//                        File(uploadsDir, fileName!!).writeBytes(bytes)
-//                    }
-//                    part.dispose()
-//                }
-//
-//                if (fileName != null) {
-//                    call.respond(ApiResponse(true, "File uploaded", fileName))
-//                } else {
-//                    call.respond(HttpStatusCode.BadRequest, ApiResponse(false, "No file received", data = null))
-//                }
+//            if (!file.exists()) {
+//                call.respond(HttpStatusCode.NotFound, "File not found")
+//                return@get
 //            }
+//
+//            // Respond with the image bytes and proper content type
+//            call.respondFile(file)
+//        }
 
         get("/image/{filename}") {
             val filename = call.parameters["filename"] ?: return@get call.respond(
-                HttpStatusCode.BadRequest,
-                "Missing filename"
+                HttpStatusCode.BadRequest, "Missing filename"
             )
-            val file = File("uploads/$filename")
+            val uploadDir = File("uploads")
+            println("Uploads directory absolute path: ${uploadDir.absolutePath}")
+
+            val file = File(uploadDir, filename)
+            println("Looking for file: ${file.absolutePath}")
 
             if (!file.exists()) {
                 call.respond(HttpStatusCode.NotFound, "File not found")
                 return@get
             }
 
-            // Respond with the image bytes and proper content type
-            call.respondFile(file)
+            if (!file.exists()) {
+                return@get call.respond(HttpStatusCode.NotFound, "File not found")
+            }
+
+            val fileUrl = "${call.request.origin.scheme}://${call.request.host()}:${call.request.port()}/image/$filename"
+            call.respond(ApiResponse(true, "Image URL", fileUrl))
         }
 
-    }
 
+    }
+    static("/image") {
+        files("uploads")
+    }
 
     route("/community") {
 
@@ -819,6 +824,40 @@ fun Route.configureRouting(
                 )
             )
         }
+    }
+
+    post("/createPost") {
+        val postRequest = try {
+            call.receive<CreatePostRequest>()
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.BadRequest, PostResponse<Unit>(false, "Invalid request format"))
+            return@post
+        }
+
+        // Simple validation example
+        if (postRequest.communityId.isBlank() || postRequest.userId.isBlank() || postRequest.title.isBlank()) {
+            call.respond(HttpStatusCode.BadRequest, PostResponse<Unit>(false, "Missing required fields"))
+            return@post
+        }
+
+        // Here you could add extra validations, e.g. check if community and user exist in DB
+
+        val createdPost = PostRepository.createPost(postRequest)
+        call.respond(
+            HttpStatusCode.OK,
+            PostResponse(true, "Post created successfully", createdPost)
+        )
+    }
+
+    // Optional: Get posts by community
+    get("/communities/{communityId}/posts") {
+        val communityId = call.parameters["communityId"] ?: ""
+        if (communityId.isBlank()) {
+            call.respond(HttpStatusCode.BadRequest, PostResponse<Unit>(false, "Missing communityId"))
+            return@get
+        }
+        val posts = PostRepository.getPostsByCommunity(communityId)
+        call.respond(PostResponse(true, "Posts fetched", posts))
     }
 
 }

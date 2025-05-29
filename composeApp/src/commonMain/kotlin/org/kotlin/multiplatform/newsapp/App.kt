@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.kotlin.multiplatform.newsapp.screen.CommunityDetailsScreen
+import org.kotlin.multiplatform.newsapp.screen.CreatePostScreen
 import org.kotlin.multiplatform.newsapp.screen.EditProfileScreen
 import org.kotlin.multiplatform.newsapp.screen.LoginScreen
 import org.kotlin.multiplatform.newsapp.screen.MainScreen
@@ -22,6 +23,8 @@ import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 @Composable
 @Preview
 fun App() {
+
+
     val navController = rememberNavController()
     val newsViewmodel = remember { NewsViewmodel() }
     val communityViewModel = remember { CommunityViewModel() }
@@ -61,6 +64,15 @@ fun App() {
             val communityId = backStackEntry.arguments?.getString("community_id") ?: ""
             println("NavController Community ID:-$communityId")
             CommunityDetailsScreen(communityId, communityViewModel = communityViewModel, navController = navController)
+
+        }
+        composable(
+            route="create/post/{community_id}",
+            arguments = listOf(navArgument("community_id"){ type= NavType.StringType})
+        ){backStackEntry ->
+            val communityId = backStackEntry.arguments?.getString("community_id") ?: ""
+            println("NavController Community ID:-$communityId")
+            CreatePostScreen(communityId, viewModel = communityViewModel, navController = navController)
 
         }
 

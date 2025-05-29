@@ -88,3 +88,50 @@ data class JoinRequestResponse(
     val message: String,
     val requests: List<JoinRequest> = emptyList()
 )
+
+@Serializable
+enum class MediaType {
+    Image, Video, Link
+}
+
+@Serializable
+data class Media(
+    val id: String,
+    val type: MediaType,
+    val mediaUrl: String
+)
+
+@Serializable
+data class CreatePostRequest(
+    val communityId: String,
+    val userId: String,
+    val title: String,
+    val authorName: String,
+    val userProfileImageUrl: String,
+    val media: MediaItem,
+    val link: String? = null // just the URL as optional string
+)
+@Serializable
+data class MediaItem(
+    val id: String,
+    val type: String, // "Image" or "Video"
+    val mediaUrl: String
+)
+
+@Serializable
+data class PostResponse<T>(
+    val success: Boolean,
+    val message: String,
+    val data: T? = null
+)
+@Serializable
+data class Post(
+    val postId: String,
+    val communityId: String,
+    val userId: String,
+    val title: String,
+    val authorName: String,
+    val userProfileImageUrl: String,
+    val media: MediaItem,
+    val link: String? = null
+)

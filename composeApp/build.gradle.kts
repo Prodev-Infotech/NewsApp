@@ -84,6 +84,15 @@ kotlin {
             implementation(libs.kamel.decoder.image.bitmap)
 
 //            implementation("io.coil-kt:coil:2.6.0")
+
+            implementation("io.github.vinceglb:filekit-core:0.10.0-beta04")
+            implementation("io.github.vinceglb:filekit-coil:0.10.0-beta04")
+
+            // Enables FileKit dialogs without Compose dependencies
+            implementation("io.github.vinceglb:filekit-dialogs:0.10.0-beta04")
+
+// Enables FileKit dialogs with Composable utilities
+            implementation("io.github.vinceglb:filekit-dialogs-compose:0.10.0-beta04")
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

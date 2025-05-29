@@ -3,13 +3,19 @@ package org.kotlin.multiplatform.newsapp.viewmodel
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import dev.icerock.moko.mvvm.viewmodel.ViewModel
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.launch
 import org.kotlin.multiplatform.newsapp.model.BaseResponse
 import org.kotlin.multiplatform.newsapp.model.Community
 import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
-import org.kotlin.multiplatform.newsapp.model.CreateCommunityRequest
+import org.kotlin.multiplatform.newsapp.model.CreatePostRequest
 import org.kotlin.multiplatform.newsapp.model.JoinLeaveRequest
 import org.kotlin.multiplatform.newsapp.model.JoinRequest
+import org.kotlin.multiplatform.newsapp.model.Post
 import org.kotlin.multiplatform.newsapp.model.ResultState
 import org.kotlin.multiplatform.newsapp.model.User
 import org.kotlin.multiplatform.newsapp.network.KtorfitServiceCreator
@@ -148,4 +154,83 @@ class CommunityViewModel : ViewModel() {
 //            }
 //        }
 //    }
+
+    private val _uploadState = mutableStateOf<ResultState<String>>(ResultState.Initial)
+    val uploadState: State<ResultState<String>> get() = _uploadState
+
+    fun uploadImage(imageBytes: ByteArray, imageName: String) {
+        viewModelScope.launch {
+            _uploadState.value = ResultState.Loading
+
+            val multipartData = MultiPartFormDataContent(
+                formData {
+                    append("image", imageBytes, Headers.build {
+                        append(HttpHeaders.ContentType, "image/jpeg")
+                        append(HttpHeaders.ContentDisposition, "form-data; name=\"image\"; filename=\"$imageName\"")
+                    })
+                }
+            )
+
+            try {
+                val response = ktorfitService.api.uploadImage(multipartData)
+                _uploadState.value = ResultState.Success(response.data ?: "")
+            } catch (e: Exception) {
+                _uploadState.value = ResultState.Error("Upload failed: ${e.message}")
+            }
+        }
+    }
+    private val _downloadState = mutableStateOf<ResultState<String>>(ResultState.Initial)
+    val downloadState: State<ResultState<String>> get() = _downloadState
+
+    fun downloadImage(filename: String) {
+        viewModelScope.launch {
+            _downloadState.value = ResultState.Loading
+            try {
+                val response = ktorfitService.api.getImage(filename)
+                _downloadState.value = ResultState.Success(response.data ?: "")
+                println("Image URL: ${response.data}")
+            } catch (e: Exception) {
+                _downloadState.value = ResultState.Error("Download failed: ${e.message}")
+                println("Download failed: ${e.message}")
+            }
+        }
+    }
+
+    private val _createPostState = mutableStateOf<ResultState<Post>>(ResultState.Initial)
+    val createPostState: State<ResultState<Post>> get() = _createPostState
+
+    fun createPost(request: CreatePostRequest) {
+        _createPostState.value = ResultState.Loading
+
+        viewModelScope.launch {
+            try {
+                val response = ktorfitService.api.createPost(request)
+                if (response.success && response.data != null) {
+                    _createPostState.value = ResultState.Success(response.data)
+                } else {
+                    _createPostState.value = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _createPostState.value = ResultState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+    private val _communityPosts = mutableStateOf<ResultState<List<Post>>>(ResultState.Initial)
+    val communityPosts: State<ResultState<List<Post>>> = _communityPosts
+
+    fun fetchCommunityPosts(communityId: String) {
+        viewModelScope.launch {
+            _communityPosts.value = ResultState.Loading
+            try {
+                val response = ktorfitService.api.getPostsByCommunity(communityId)
+                if (response.success && response.data != null) {
+                    _communityPosts.value = ResultState.Success(response.data.reversed())
+                } else {
+                    _communityPosts.value = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _communityPosts.value = ResultState.Error(e.message?: "Unknown error")
+            }
+        }
+    }
 }
