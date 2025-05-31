@@ -51,8 +51,11 @@ interface NewsServices {
     @GET("user/{userId}")
     suspend fun getUserById(@Path("userId") id: String): ApiResponse<UserResponseData>
 
-    @PUT("user/update")
-    suspend fun updateUser(@Body user: EditProfileRequest): ApiResponse<User>
+    @PUT("auth/edit-profile")
+    suspend fun updateUser(
+        @Body user: EditProfileRequest,
+        @Query("userId") userId: String
+    ): ApiResponse<User>
 
     @POST("auth/change-password")
     suspend fun changePassword(@Body request: ChangePasswordRequest): ApiResponse<Unit>

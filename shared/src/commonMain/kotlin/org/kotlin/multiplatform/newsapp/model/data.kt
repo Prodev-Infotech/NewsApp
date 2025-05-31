@@ -57,7 +57,7 @@ data class SignUpRequest(
 @Serializable
 data class UserResponseData(
     val id: String,
-    val name: String,
+    var name: String,
     val email: String,
     val profileImage: String? = null // Optional field
 )

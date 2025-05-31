@@ -109,7 +109,8 @@ data class CreatePostRequest(
     val authorName: String,
     val userProfileImageUrl: String,
     val media: MediaItem,
-    val link: String? = null // just the URL as optional string
+    val link: String? = null, // just the URL as optional string
+    val postedAt: String= getCurrentFormattedDate(),
 )
 @Serializable
 data class MediaItem(
@@ -133,5 +134,6 @@ data class Post(
     val authorName: String,
     val userProfileImageUrl: String,
     val media: MediaItem,
-    val link: String? = null
+    val link: String? = null,
+    val postedAt: String
 )

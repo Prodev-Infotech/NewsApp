@@ -11,7 +11,6 @@ import org.kotlin.multiplatform.newsapp.nvigation.Graph
 import org.kotlin.multiplatform.newsapp.nvigation.Routes
 import org.kotlin.multiplatform.newsapp.screen.BookMarkScreen
 import org.kotlin.multiplatform.newsapp.screen.CommunicationScreen
-import org.kotlin.multiplatform.newsapp.screen.EditProfileScreen
 import org.kotlin.multiplatform.newsapp.screen.NewsScreen
 import org.kotlin.multiplatform.newsapp.screen.ProfileScreen
 import org.kotlin.multiplatform.newsapp.viewmodel.CommunityViewModel

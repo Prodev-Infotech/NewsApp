@@ -39,20 +39,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import io.kamel.core.Resource
+import io.kamel.image.KamelImage
+import io.kamel.image.asyncPainterResource
 import newskotlinproject.composeapp.generated.resources.Res
 import newskotlinproject.composeapp.generated.resources.ic_call
 import newskotlinproject.composeapp.generated.resources.ic_documntetion
 import newskotlinproject.composeapp.generated.resources.ic_lock
 import newskotlinproject.composeapp.generated.resources.ic_logout
 import newskotlinproject.composeapp.generated.resources.ic_user
+import newskotlinproject.composeapp.generated.resources.ic_user_profile_pl
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.kotlin.multiplatform.newsapp.model.ResultState
 import org.kotlin.multiplatform.newsapp.utils.SessionUtil
+import org.kotlin.multiplatform.newsapp.viewmodel.NewsViewmodel
 import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,16 +146,36 @@ fun ProfileSection(navController:NavController,useName:String,userProfile:String
             .padding(horizontal = 16.dp, vertical = 24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Profile Image
-        Image(
-//            painter = rememberAsyncImagePainter("https://randomuser.me/api/portraits/women/1.jpg"),
-            painter = painterResource(Res.drawable.ic_user),
-            contentDescription = "Profile Picture",
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(Color.LightGray)
-        )
+
+        val imageResource = userProfile?.let { asyncPainterResource(it) }
+
+        if (imageResource == null || imageResource is Resource.Loading || imageResource is Resource.Failure) {
+            Image(
+                painter = painterResource(Res.drawable.ic_user_profile_pl),
+                contentDescription = "Loading placeholder",
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(Color.LightGray),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            KamelImage(
+                resource = { imageResource },
+                contentDescription = "Profile Image",
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop,
+                onLoading = {
+                    println("Loading image...")
+                },
+                onFailure = {
+                    println("Failed to load image")
+                }
+            )
+
+    }
 
         Spacer(modifier = Modifier.width(12.dp))
 
@@ -213,6 +239,9 @@ fun SettingsItem(title: String, icon: DrawableResource, bgColor: Color, navContr
             .clickable { if(title.equals("Logout")){
                 showDialog=true
             }
+                if(title.equals("Change Password")){
+                    navController.navigate("changePassword")
+                }
             }
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {

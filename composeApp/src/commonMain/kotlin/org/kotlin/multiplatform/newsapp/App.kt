@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.kotlin.multiplatform.newsapp.screen.ChangePasswordScreen
 import org.kotlin.multiplatform.newsapp.screen.CommunityDetailsScreen
 import org.kotlin.multiplatform.newsapp.screen.CreatePostScreen
 import org.kotlin.multiplatform.newsapp.screen.EditProfileScreen
@@ -23,11 +24,10 @@ import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 @Composable
 @Preview
 fun App() {
-
-
     val navController = rememberNavController()
     val newsViewmodel = remember { NewsViewmodel() }
     val communityViewModel = remember { CommunityViewModel() }
+    val userViewModel = remember { UserViewModel() }
 
     NavHost(navController = navController, startDestination = "Splash") {
 
@@ -45,7 +45,8 @@ fun App() {
         }
         composable("editProfile"){
             val userViewModel:UserViewModel= viewModel()
-                EditProfileScreen(navController=navController,userViewModel=userViewModel)
+            val communityViewModel:CommunityViewModel= viewModel()
+                EditProfileScreen(navController=navController,userViewModel=userViewModel,viewmodel=communityViewModel)
         }
 
         composable(
@@ -72,10 +73,13 @@ fun App() {
         ){backStackEntry ->
             val communityId = backStackEntry.arguments?.getString("community_id") ?: ""
             println("NavController Community ID:-$communityId")
-            CreatePostScreen(communityId, viewModel = communityViewModel, navController = navController)
+            CreatePostScreen(communityId, viewModel = communityViewModel, navController = navController,userViewModel)
 
         }
 
-
+        composable("changePassword"){
+            val userViewModel:UserViewModel= viewModel()
+            ChangePasswordScreen(navController=navController,userViewModel=userViewModel)
+        }
     }
 }

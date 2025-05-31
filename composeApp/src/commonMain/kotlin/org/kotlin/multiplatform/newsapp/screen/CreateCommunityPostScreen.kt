@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
@@ -54,30 +56,59 @@ import newskotlinproject.composeapp.generated.resources.Res
 import newskotlinproject.composeapp.generated.resources.ic_add_photo
 import newskotlinproject.composeapp.generated.resources.ic_backarrow
 import org.jetbrains.compose.resources.painterResource
+import org.kotlin.multiplatform.newsapp.imagepicker.takePictureMultiplatform
 import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
 import org.kotlin.multiplatform.newsapp.model.CreatePostRequest
 import org.kotlin.multiplatform.newsapp.model.MediaItem
 import org.kotlin.multiplatform.newsapp.model.MediaType
 import org.kotlin.multiplatform.newsapp.model.ResultState
+import org.kotlin.multiplatform.newsapp.model.UserResponseData
 import org.kotlin.multiplatform.newsapp.utils.SessionUtil
 import org.kotlin.multiplatform.newsapp.utils.generateId
 import org.kotlin.multiplatform.newsapp.viewmodel.CommunityViewModel
+import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreatePostScreen(communityId: String,
                      viewModel: CommunityViewModel,
-                     navController: NavController,) {
+                     navController: NavController,
+                     userViewModel: UserViewModel) {
 
 
     val communityState by viewModel.singleCommunityState
     var community: CommunityWithJoinStatus? = null
     var communityTitle by remember { mutableStateOf("") }
     var communityLink by remember { mutableStateOf("") }
+
+    var user by remember { mutableStateOf(UserResponseData("","","","")) }
+
+
+    val userState by userViewModel.getUserState
     LaunchedEffect(communityId){
         viewModel.fetchSingleCommunity(communityId, SessionUtil.getUserId().toString())
+        userViewModel.getUserById(SessionUtil.getUserId().toString())
     }
+    when(userState){
+        is ResultState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        is ResultState.Success -> {
+            user = (userState as ResultState.Success).data
+        }
 
+        is ResultState.Error -> {
+            val error = (userState as ResultState.Error)
+            println("Error:->$error")
+        }
+
+        else -> {}
+    }
     // UI based on state
     when (communityState) {
         is ResultState.Initial, is ResultState.Loading -> {
@@ -305,8 +336,8 @@ fun CreatePostScreen(communityId: String,
                                     communityId = it,
                                     userId = SessionUtil.getUserId().toString(),
                                     title = communityTitle,
-                                    authorName = SessionUtil.getUser()?.name.toString(),
-                                    userProfileImageUrl = SessionUtil.getUser()?.profileImageUrl.toString(),
+                                    authorName = user.name,
+                                    userProfileImageUrl = user.profileImage.toString(),
                                     media = MediaItem(
                                         id = generateId(),
                                         type = MediaType.Image.toString(),
@@ -332,7 +363,11 @@ fun CreatePostScreen(communityId: String,
                     is ResultState.Loading -> CircularProgressIndicator()
                     is ResultState.Success -> {
                         println("Post created: ${(postState as ResultState.Success).data}")
-                        navController.navigateUp()
+                        val postResult = (postState as ResultState.Success).data
+                        LaunchedEffect(postResult) {
+                            println("Post created: $postResult")
+                            navController.navigateUp()
+                        }
                     }
 
                     is ResultState.Error -> {

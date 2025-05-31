@@ -16,7 +16,8 @@ object PostRepository {
             authorName = request.authorName,
             userProfileImageUrl = request.userProfileImageUrl,
             media = request.media,
-            link = request.link
+            link = request.link,
+            postedAt = request.postedAt
         )
         posts.add(post)
         return post

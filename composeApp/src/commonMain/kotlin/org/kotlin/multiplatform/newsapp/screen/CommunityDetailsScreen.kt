@@ -27,6 +27,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -59,7 +61,9 @@ import org.jetbrains.compose.resources.painterResource
 import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
 import org.kotlin.multiplatform.newsapp.model.Post
 import org.kotlin.multiplatform.newsapp.model.ResultState
+import org.kotlin.multiplatform.newsapp.openLink
 import org.kotlin.multiplatform.newsapp.utils.SessionUtil
+import org.kotlin.multiplatform.newsapp.utils.getTimeAgo
 import org.kotlin.multiplatform.newsapp.viewmodel.CommunityViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -360,26 +364,45 @@ fun MainFeedScreen(selectedTab: Int,posts: List<Post>) {
         else -> posts
     }
 
-    InstaStyleFeed(posts = filteredPosts)
+    InstaStyleFeed(posts = filteredPosts,selectedTab = selectedTab)
 }
 
 @Composable
-fun InstaStyleFeed(posts: List<Post>) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(12.dp)
-    ) {
-        items(posts) { post ->
-            PostItem(post)
+fun InstaStyleFeed(posts: List<Post>, selectedTab: Int) {
+    if (posts.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = if (selectedTab == 0) "No photo yet!" else "No video yet!",
+                fontSize = 16.sp,
+                color = Color.Gray,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(12.dp)
+        ) {
+            items(posts) { post ->
+                PostItem(post)
+            }
         }
     }
 }
 
 @Composable
 fun PostItem(post: Post) {
+    val timeAgo = remember(post.postedAt) {
+        getTimeAgo(post.postedAt)
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -433,7 +456,7 @@ fun PostItem(post: Post) {
 
                     Column {
                         Text(post.authorName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("2hr ago", fontSize = 12.sp, color = Color.Gray)
+                        Text(timeAgo, fontSize = 12.sp, color = Color.Gray)
                     }
                 }
 
@@ -505,12 +528,12 @@ fun PostItem(post: Post) {
                     tint = Color.Gray,
                     modifier = Modifier
                         .size(24.dp)
-//                        .clickable {
+                        .clickable {
 //                            newsViewmodel.toggleLike(
 //                                news.id,
 //                                SessionUtil.getUserId().toString()
 //                            )
-//                        }
+                        }
                 )
                 Spacer(modifier = Modifier.width(6.dp))
 
@@ -576,7 +599,14 @@ fun PostItem(post: Post) {
                     post.link!!,
                     fontSize = 14.sp,
                     color = Color(0xFF1A73E8),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color.Blue,
+                        textDecoration = TextDecoration.Underline
+                    ),
                     modifier = Modifier.padding(top = 4.dp)
+                        .clickable {
+                            openLink(post.link!!)
+                        }
                 )
             }
         }

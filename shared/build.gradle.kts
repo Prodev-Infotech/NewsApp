@@ -68,6 +68,15 @@ kotlin {
             implementation("com.russhwolf:multiplatform-settings:1.3.0")
             implementation("org.jetbrains.compose.ui:ui:1.5.0") // Compose Multiplatform UI
 
+            implementation("io.github.vinceglb:filekit-core:0.10.0-beta04")
+            implementation("io.github.vinceglb:filekit-coil:0.10.0-beta04")
+
+            // Enables FileKit dialogs without Compose dependencies
+            implementation("io.github.vinceglb:filekit-dialogs:0.10.0-beta04")
+
+// Enables FileKit dialogs with Composable utilities
+            implementation("io.github.vinceglb:filekit-dialogs-compose:0.10.0-beta04")
+
         }
         androidMain.dependencies{
             implementation ("androidx.core:core-ktx:1.10.0")

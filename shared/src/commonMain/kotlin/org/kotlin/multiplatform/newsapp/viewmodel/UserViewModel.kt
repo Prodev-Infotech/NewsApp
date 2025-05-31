@@ -101,12 +101,12 @@ class UserViewModel : ViewModel() {
             }
         }
     }
-    fun editProfile(updatedUser: EditProfileRequest) {
+    fun editProfile(userId: String, updatedUser: EditProfileRequest) {
         _updateProfileState.value = ResultState.Loading
 
         viewModelScope.launch {
             try {
-                val response = ktorfitService.api.updateUser(updatedUser)
+                val response = ktorfitService.api.updateUser(updatedUser, userId)
                 if (response.status && response.data != null) {
                     _updateProfileState.value = ResultState.Success(response.data)
                 } else {
