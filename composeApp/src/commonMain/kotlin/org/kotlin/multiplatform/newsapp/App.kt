@@ -8,6 +8,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.kotlin.multiplatform.newsapp.camera.CameraManager
+import org.kotlin.multiplatform.newsapp.imagepicker.PermissionsManager
 import org.kotlin.multiplatform.newsapp.screen.ChangePasswordScreen
 import org.kotlin.multiplatform.newsapp.screen.CommunityDetailsScreen
 import org.kotlin.multiplatform.newsapp.screen.CreatePostScreen
@@ -23,7 +25,7 @@ import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 
 @Composable
 @Preview
-fun App() {
+fun App(cameraManager: CameraManager, permissionsManager: PermissionsManager) {
     val navController = rememberNavController()
     val newsViewmodel = remember { NewsViewmodel() }
     val communityViewModel = remember { CommunityViewModel() }
@@ -73,7 +75,7 @@ fun App() {
         ){backStackEntry ->
             val communityId = backStackEntry.arguments?.getString("community_id") ?: ""
             println("NavController Community ID:-$communityId")
-            CreatePostScreen(communityId, viewModel = communityViewModel, navController = navController,userViewModel)
+            CreatePostScreen(communityId, viewModel = communityViewModel, navController = navController,userViewModel,cameraManager=cameraManager,permissionsManager)
 
         }
 

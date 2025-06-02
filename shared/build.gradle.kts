@@ -76,6 +76,8 @@ kotlin {
 
 // Enables FileKit dialogs with Composable utilities
             implementation("io.github.vinceglb:filekit-dialogs-compose:0.10.0-beta04")
+            implementation("media.kamel:kamel-image:1.0.5") // Alternative
+
 
         }
         androidMain.dependencies{

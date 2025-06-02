@@ -195,7 +195,9 @@ class CommunityViewModel : ViewModel() {
             }
         }
     }
-
+    fun resetCreatePostState() {
+        _createPostState.value = ResultState.Initial
+    }
     private val _createPostState = mutableStateOf<ResultState<Post>>(ResultState.Initial)
     val createPostState: State<ResultState<Post>> get() = _createPostState
 

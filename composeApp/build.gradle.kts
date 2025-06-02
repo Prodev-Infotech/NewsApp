@@ -93,7 +93,10 @@ kotlin {
 
 // Enables FileKit dialogs with Composable utilities
             implementation("io.github.vinceglb:filekit-dialogs-compose:0.10.0-beta04")
-            implementation("io.github.kevinnzou:compose-multiplatform-camera:0.3.0")
+//            implementation("io.github.kevinnzou:compose-multiplatform-camera:0.3.0")
+
+            implementation("media.kamel:kamel-image:1.0.5") // Alternative
+
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

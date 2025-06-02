@@ -11,10 +11,19 @@ import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.init
 import io.kamel.core.config.KamelConfig
 import io.kamel.image.config.resourcesFetcher
+import org.kotlin.multiplatform.newsapp.camera.createCameraManager
+import org.kotlin.multiplatform.newsapp.imagepicker.PermissionsManager
+import org.kotlin.multiplatform.newsapp.imagepicker.createPermissionsManager
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var permissionsManager: PermissionsManager
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+        permissionsManager = createPermissionsManager(this)
+        val cameraManager = createCameraManager(this)
 
         setContent {
             val context: Context = LocalContext.current
@@ -23,7 +32,7 @@ class MainActivity : ComponentActivity() {
                 // Available only on Android.
                 resourcesFetcher(context)
             }
-            App()
+            App(cameraManager,permissionsManager)
         }
     }
 }
@@ -31,5 +40,5 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    App()
+//    App(cameraManager, permissionsManager)
 }

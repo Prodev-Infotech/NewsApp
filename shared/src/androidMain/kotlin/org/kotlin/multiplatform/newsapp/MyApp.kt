@@ -2,6 +2,7 @@ package org.kotlin.multiplatform.newsapp
 
 import android.app.Application
 import android.content.Context
+import org.kotlin.multiplatform.newsapp.camera.initializeContext
 
 class MyApp: Application() {
 
@@ -16,6 +17,7 @@ class MyApp: Application() {
         super.onCreate()
         ContextProvider.context = this
         appContext = applicationContext // Initialize context here
+        initializeContext(applicationContext)
 
     }
 }
