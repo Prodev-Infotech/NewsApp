@@ -11,6 +11,8 @@ pluginManagement {
             }
         }
         mavenCentral()
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev") // If you use JetBrains Compose Multiplatform
+
         gradlePluginPortal()
     }
 }
@@ -25,9 +27,13 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev") // If you use JetBrains Compose Multiplatform
+
     }
+
 }
 
 include(":composeApp")
 include(":server")
 include(":shared")
+include(":androidApp")

@@ -36,7 +36,9 @@ class UserViewModel : ViewModel() {
     val deleteAccountState: State<ResultState<Boolean>> get() = _deleteAccountState
 
     private val ktorfitService = KtorfitServiceCreator(baseUrl)
-
+    fun resetUpdateProfileState() {
+        _updateProfileState.value = ResultState.Initial
+    }
     // Function for handling signup
     fun signUp(request: SignUpRequest) {
         _signUpState.value = ResultState.Loading

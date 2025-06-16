@@ -3,12 +3,15 @@ package org.kotlin.multiplatform.newsapp.network
 import de.jensklingenberg.ktorfit.http.Body
 import de.jensklingenberg.ktorfit.http.DELETE
 import de.jensklingenberg.ktorfit.http.GET
+import de.jensklingenberg.ktorfit.http.Multipart
 import de.jensklingenberg.ktorfit.http.POST
 import de.jensklingenberg.ktorfit.http.PUT
+import de.jensklingenberg.ktorfit.http.Part
 import de.jensklingenberg.ktorfit.http.Path
 import de.jensklingenberg.ktorfit.http.Query
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.cio.Response
 import org.kotlin.multiplatform.newsapp.model.ApiResponse
 import org.kotlin.multiplatform.newsapp.model.BaseResponse
 import org.kotlin.multiplatform.newsapp.model.ChangePasswordRequest
@@ -144,4 +147,10 @@ interface NewsServices {
     suspend fun getPostsByCommunity(
         @Path("communityId") communityId: String
     ): PostResponse<List<Post>>
+
+    @POST("news/upload/video")
+    suspend fun uploadVideo(@Body body: MultiPartFormDataContent): ApiResponse<String>
+
+    @GET("news/video/{filename}")
+    suspend fun getVideoUrl(@Path("filename") filename: String): ApiResponse<String>
 }

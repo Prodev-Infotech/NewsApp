@@ -3,6 +3,7 @@ package org.kotlin.multiplatform.newsapp.viewmodel
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import dev.icerock.moko.mvvm.viewmodel.ViewModel
+import io.kamel.core.utils.File
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.client.statement.HttpResponse
@@ -15,12 +16,15 @@ import org.kotlin.multiplatform.newsapp.model.CommunityWithJoinStatus
 import org.kotlin.multiplatform.newsapp.model.CreatePostRequest
 import org.kotlin.multiplatform.newsapp.model.JoinLeaveRequest
 import org.kotlin.multiplatform.newsapp.model.JoinRequest
+import org.kotlin.multiplatform.newsapp.model.MediaItem
 import org.kotlin.multiplatform.newsapp.model.Post
 import org.kotlin.multiplatform.newsapp.model.ResultState
 import org.kotlin.multiplatform.newsapp.model.User
 import org.kotlin.multiplatform.newsapp.network.KtorfitServiceCreator
 import org.kotlin.multiplatform.newsapp.utils.SessionUtil
 import org.kotlin.multiplatform.newsapp.utils.baseUrl
+import org.kotlin.multiplatform.newsapp.utils.generateId
+import org.kotlin.multiplatform.newsapp.utils.getCurrentFormattedDate
 
 class CommunityViewModel : ViewModel() {
     private val _communityState = mutableStateOf<ResultState<List<CommunityWithJoinStatus>>>(ResultState.Initial)
@@ -232,6 +236,54 @@ class CommunityViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _communityPosts.value = ResultState.Error(e.message?: "Unknown error")
+            }
+        }
+    }
+    private val _uploadVideoState = mutableStateOf<ResultState<String>>(ResultState.Initial)
+    val uploadVideoState: State<ResultState<String>> get() = _uploadVideoState
+
+
+    fun uploadVideo(videoBytes: ByteArray, fileName: String) {
+        viewModelScope.launch {
+            _uploadVideoState.value = ResultState.Loading
+            try {
+                val multipartData = MultiPartFormDataContent(
+                    formData {
+                        append("video", videoBytes, Headers.build {
+                            append(HttpHeaders.ContentType, "video/mp4")
+                            append(HttpHeaders.ContentDisposition, "form-data; name=\"video\"; filename=\"${generateId()}+$fileName\"")
+                        })
+                    }
+                )
+
+                val response = ktorfitService.api.uploadVideo(multipartData)
+                println("response:--$response")
+                if (response.status && response.data != null) {
+                    _uploadVideoState.value = ResultState.Success(response.data)
+                } else {
+                    _uploadVideoState.value = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _uploadVideoState.value = ResultState.Error(e.message ?: "Upload failed")
+            }
+        }
+    }
+
+    private val _videoUrlState = mutableStateOf<ResultState<String>>(ResultState.Initial)
+    val videoUrlState: State<ResultState<String>> get() = _videoUrlState
+
+    fun fetchVideoUrl(fileName: String) {
+        viewModelScope.launch {
+            _videoUrlState.value = ResultState.Loading
+            try {
+                val response = ktorfitService.api.getVideoUrl(fileName)
+                if (response.status && response.data != null) {
+                    _videoUrlState.value = ResultState.Success(response.data)
+                } else {
+                    _videoUrlState.value = ResultState.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _videoUrlState.value = ResultState.Error(e.message ?: "Unknown error")
             }
         }
     }

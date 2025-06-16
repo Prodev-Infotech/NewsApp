@@ -7,7 +7,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.kotlin.multiplatform.newsapp.camera.CameraManager
 import org.kotlin.multiplatform.newsapp.imagepicker.PermissionsManager
 import org.kotlin.multiplatform.newsapp.screen.ChangePasswordScreen
@@ -24,7 +23,7 @@ import org.kotlin.multiplatform.newsapp.viewmodel.NewsViewmodel
 import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 
 @Composable
-@Preview
+//@Preview
 fun App(cameraManager: CameraManager, permissionsManager: PermissionsManager) {
     val navController = rememberNavController()
     val newsViewmodel = remember { NewsViewmodel() }
@@ -33,55 +32,77 @@ fun App(cameraManager: CameraManager, permissionsManager: PermissionsManager) {
 
     NavHost(navController = navController, startDestination = "Splash") {
 
-        composable("Splash"){
+        composable("Splash") {
             SplashScreen(navController = navController)
         }
         composable("Login") {
-            LoginScreen(viewModel = UserViewModel(), navController = navController)
+            LoginScreen(
+                viewModel = UserViewModel(),
+                navController = navController
+            )
         }
         composable("SignUp") {
-            SignUpScreen(viewModel = UserViewModel(), navController = navController)
+            SignUpScreen(
+                viewModel = UserViewModel(),
+                navController = navController
+            )
         }
         composable("main") {
             MainScreen(navController = navController)
+//            VideoPickerScreen(viewModel,communityViewModel)
         }
-        composable("editProfile"){
-            val userViewModel:UserViewModel= viewModel()
-            val communityViewModel:CommunityViewModel= viewModel()
-                EditProfileScreen(navController=navController,userViewModel=userViewModel,viewmodel=communityViewModel)
+        composable("editProfile") {
+            EditProfileScreen(
+                navController = navController,
+                userViewModel = userViewModel,
+                viewmodel = communityViewModel,
+                cameraManager = cameraManager, permissionsManager
+            )
         }
 
         composable(
-            route="news/detail/{news_id}",
-            arguments = listOf(navArgument("news_id"){ type= NavType.StringType})
-        ){backStackEntry ->
+            route = "news/detail/{news_id}",
+            arguments = listOf(navArgument("news_id") { type = NavType.StringType })
+        ) { backStackEntry ->
             val newsId = backStackEntry.arguments?.getString("news_id") ?: ""
             println("NavController News ID:-$newsId")
             NewsDetailScreen(newsId, newsViewmodel = newsViewmodel, navController = navController)
 
         }
         composable(
-            route="community/detail/{community_id}",
-            arguments = listOf(navArgument("community_id"){ type= NavType.StringType})
-        ){backStackEntry ->
+            route = "community/detail/{community_id}",
+            arguments = listOf(navArgument("community_id") { type = NavType.StringType })
+        ) { backStackEntry ->
             val communityId = backStackEntry.arguments?.getString("community_id") ?: ""
             println("NavController Community ID:-$communityId")
-            CommunityDetailsScreen(communityId, communityViewModel = communityViewModel, navController = navController)
+            CommunityDetailsScreen(
+                communityId,
+                communityViewModel = communityViewModel,
+                navController = navController
+            )
 
         }
         composable(
-            route="create/post/{community_id}",
-            arguments = listOf(navArgument("community_id"){ type= NavType.StringType})
-        ){backStackEntry ->
+            route = "create/post/{community_id}",
+            arguments = listOf(navArgument("community_id") { type = NavType.StringType })
+        ) { backStackEntry ->
             val communityId = backStackEntry.arguments?.getString("community_id") ?: ""
             println("NavController Community ID:-$communityId")
-            CreatePostScreen(communityId, viewModel = communityViewModel, navController = navController,userViewModel,cameraManager=cameraManager,permissionsManager)
+            CreatePostScreen(
+                communityId, viewModel = communityViewModel,
+                navController = navController,
+                userViewModel,
+                cameraManager = cameraManager,
+                permissionsManager
+            )
 
         }
 
-        composable("changePassword"){
-            val userViewModel:UserViewModel= viewModel()
-            ChangePasswordScreen(navController=navController,userViewModel=userViewModel)
+        composable("changePassword") {
+            ChangePasswordScreen(
+                navController = navController,
+                userViewModel = userViewModel
+            )
         }
     }
 }

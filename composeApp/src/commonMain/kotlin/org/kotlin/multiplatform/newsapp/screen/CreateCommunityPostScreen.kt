@@ -54,6 +54,7 @@ import newskotlinproject.composeapp.generated.resources.Res
 import newskotlinproject.composeapp.generated.resources.ic_add_photo
 import newskotlinproject.composeapp.generated.resources.ic_backarrow
 import org.jetbrains.compose.resources.painterResource
+import org.kotlin.multiplatform.newsapp.VideoPicker.VideoPlayer
 import org.kotlin.multiplatform.newsapp.camera.CameraManager
 import org.kotlin.multiplatform.newsapp.camera.getImageDetailsFromUri
 import org.kotlin.multiplatform.newsapp.imagepicker.PermissionsManager
@@ -71,11 +72,12 @@ import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreatePostScreen(communityId: String,
-                     viewModel: CommunityViewModel,
-                     navController: NavController,
-                     userViewModel: UserViewModel,
-                     cameraManager: CameraManager, permissionsManager: PermissionsManager
+fun CreatePostScreen(
+    communityId: String,
+    viewModel: CommunityViewModel,
+    navController: NavController,
+    userViewModel: UserViewModel,
+    cameraManager: CameraManager, permissionsManager: PermissionsManager,
 ) {
 
     var hasNavigatedBack by remember { mutableStateOf(false) }
@@ -85,8 +87,10 @@ fun CreatePostScreen(communityId: String,
     var communityTitle by remember { mutableStateOf("") }
     var communityLink by remember { mutableStateOf("") }
 
-    var user by remember { mutableStateOf(UserResponseData("","","","")) }
+    var user by remember { mutableStateOf(UserResponseData("", "", "", "")) }
     var selectedImageUri by remember { mutableStateOf<String?>(null) }
+    var selectedVideoUri by remember { mutableStateOf<String?>(null) }
+
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val imagePickerManager = remember {
@@ -95,11 +99,11 @@ fun CreatePostScreen(communityId: String,
     }
 
     val userState by userViewModel.getUserState
-    LaunchedEffect(communityId){
+    LaunchedEffect(communityId) {
         viewModel.fetchSingleCommunity(communityId, SessionUtil.getUserId().toString())
         userViewModel.getUserById(SessionUtil.getUserId().toString())
     }
-    when(userState){
+    when (userState) {
         is ResultState.Loading -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -108,6 +112,7 @@ fun CreatePostScreen(communityId: String,
                 CircularProgressIndicator()
             }
         }
+
         is ResultState.Success -> {
             user = (userState as ResultState.Success).data
         }
@@ -176,85 +181,97 @@ fun CreatePostScreen(communityId: String,
                     containerColor = Color(0xFF757575)
                 )
             )
-            Column(modifier = Modifier.fillMaxSize().padding(20.dp)
-                .verticalScroll(scrollState)
-                ,verticalArrangement = Arrangement.spacedBy(12.dp)
+            Column(
+                modifier = Modifier.fillMaxSize().padding(20.dp)
+                    .verticalScroll(scrollState), verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .clickable {
-                        isLoading = true
-                        errorMessage = null
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clickable {
+                            isLoading = true
+                            errorMessage = null
 
-                        CoroutineScope(Dispatchers.Main).launch {
-                            val result = imagePickerManager.showImagePicker()
-                            isLoading = false
+                            CoroutineScope(Dispatchers.Main).launch {
+                                println("Picker starting...") // check this log
+                                val result = imagePickerManager.showImagePicker()
+                                println("RESULT: $result")
+                                isLoading = false
 
-                            when {
-                                result.error != null -> errorMessage = result.error
-                                result.isCancelled -> { /* Handle cancellation */ }
-                                result.imageUri != null -> selectedImageUri = result.imageUri
+                                when {
+                                    result.error != null -> errorMessage = result.error
+                                    result.isCancelled -> { /* Handle cancellation */
+                                    }
+
+                                    result.imageUri != null -> {
+                                        selectedImageUri = result.imageUri
+                                        selectedVideoUri = null // reset video
+                                    }
+
+                                    result.videoUri != null -> {
+                                        selectedVideoUri = result.videoUri
+                                        selectedImageUri = null // reset image
+                                    }
+                                }
                             }
                         }
-                    }
-                    .background(Color.LightGray, shape = RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
-            )
-            {
+                        .background(Color.LightGray, shape = RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                )
+                {
+                    when {
+                        selectedImageUri != null -> {
+                            // Show image
+                            val imageResource = asyncPainterResource("file://$selectedImageUri")
 
-                if (selectedImageUri != null) {
-                    selectedImageUri?.let { file ->
-                        println("Selected file:-$file")// Convert file path to proper URI format
-                         properUri = if (file.startsWith("/")) {
-                            "file://$file"
-                        } else {
-                            file
+                                KamelImage(
+                                    resource = { imageResource },
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop,
+                                    onLoading = { println("Loading...") },
+                                    onFailure = { println("Failed to load image: ${it.message}") }
+                                )
                         }
-properUri?.let {uri->
-    val imageResource = asyncPainterResource(uri)
 
-    KamelImage(
-        resource = { imageResource },
-        contentDescription = null,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp)
-            .clip(RoundedCornerShape(8.dp)),
-        contentScale = ContentScale.Crop,
-        onLoading = { println("Loading...") },
-        onFailure = { println("Failed to load image: ${it.message}") }
-    )
-}
+                        selectedVideoUri != null -> {
+                            // Show video preview (replace with your video player)
+                            VideoPlayer(
+                                modifier = Modifier.fillMaxWidth().height(300.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                url = selectedVideoUri!! // Ensure `video.path` is the full URI
+                            )
+                        }
 
-
-                        Spacer(modifier = Modifier.height(16.dp))
+                        else -> {
+                            // Default icon
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_add_photo),
+                                contentDescription = "Add Media",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
                     }
-                    // Error message
-                    errorMessage?.let { error ->
+                    // Show error message
+                    errorMessage?.let {
                         Text(
-                            text = error,
+                            text = it,
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(8.dp)
                         )
                     }
 
-
                     // Loading indicator
-                    if (isLoading) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                } else {
-                    Icon(
-                        painter = painterResource(Res.drawable.ic_add_photo),
-                        contentDescription = "Add Photo",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(40.dp)
-                    )
+                        if (isLoading) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
                 }
-            }
 
                 val detailsScrollState = rememberScrollState()
 
@@ -272,7 +289,7 @@ properUri?.let {uri->
                             width = 1.dp,
                             color = Color.Gray,
                             shape = RoundedCornerShape(4.dp)
-                        ) ,
+                        ),
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                     placeholder = { Text("What's on your mind?") },
                     colors = TextFieldDefaults.colors(
@@ -317,16 +334,26 @@ properUri?.let {uri->
 
                 Button(
                     onClick = {
-                        val uriString = properUri.toString()
-                        properUri?.let { uri ->
-                            coroutineScope.launch {
-                                val (name, bytes) = getImageDetailsFromUri(uriString)
-                                println("Name: $name")
-                                println("Size: ${bytes?.size}")
-                                if (bytes != null) {
-                                    if (name != null) {
+                        coroutineScope.launch {
+                            when {
+                                selectedImageUri != null -> {
+                                    val (name, bytes) = getImageDetailsFromUri("file://$selectedImageUri")
+                                    println("Image name: $name, size: ${bytes?.size}")
+                                    if (bytes != null && name != null) {
                                         viewModel.uploadImage(bytes, name)
                                     }
+                                }
+
+                                selectedVideoUri != null -> {
+                                    val (name, bytes) = getImageDetailsFromUri("file://$selectedVideoUri")
+                                    println("Video name: $name, size: ${bytes?.size}")
+                                    if (bytes != null && name != null) {
+                                        viewModel.uploadVideo(bytes, name)
+                                    }
+                                }
+
+                                else -> {
+                                    println("No media selected.")
                                 }
                             }
                         }
@@ -364,6 +391,81 @@ properUri?.let {uri->
                     is ResultState.Error -> {
                         Text("Error: ${uploadState.exception}")
                         println("Error:-->${uploadState.exception}")
+                    }
+
+                    else -> {}
+                }
+                when (val uploadVideoState = viewModel.uploadVideoState.value) {
+                    is ResultState.Loading -> {
+                        println("Upload Loading...")
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    is ResultState.Success -> {
+                        println("Upload successful: ${uploadVideoState.data}")
+                        val videoName = (uploadVideoState as? ResultState.Success)?.data
+                        LaunchedEffect(videoName) {
+                            if (videoName != null) {
+                                println("Triggering download for: $videoName")
+                                viewModel.fetchVideoUrl(videoName)
+                            }
+                        }
+                    }
+
+                    is ResultState.Error -> {
+                        Text("Error: ${uploadVideoState.exception}")
+                        println("Error:-->${uploadVideoState.exception}")
+                    }
+
+                    else -> {}
+                }
+                val videoUrlState = viewModel.videoUrlState.value
+
+                when (videoUrlState) {
+                    is ResultState.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    is ResultState.Success -> {
+                        val videoUrl = videoUrlState.data
+                        LaunchedEffect(key1 = videoUrl) {
+                            println("Upload successful: $videoUrl")
+                            println("image url:-->$videoUrl")
+
+                            val request = community?.id?.let {
+                                CreatePostRequest(
+                                    communityId = it,
+                                    userId = SessionUtil.getUserId().toString(),
+                                    title = communityTitle,
+                                    authorName = user.name,
+                                    userProfileImageUrl = user.profileImage.toString(),
+                                    media = MediaItem(
+                                        id = generateId(),
+                                        type = MediaType.Video.toString(),
+                                        mediaUrl = videoUrl
+                                    ),
+                                    link = communityLink
+                                )
+                            }
+                            if (request != null) {
+                                viewModel.createPost(request)
+                                // Reset image selection after initiating post creation
+                            }
+                        }
+                    }
+
+                    is ResultState.Error -> {
+                        Text("Error: ${videoUrlState.exception}")
                     }
 
                     else -> {}
@@ -678,7 +780,6 @@ properUri?.let {uri->
 //        }
 //    }
 //}
-
 
 
 //LazyVerticalGrid(

@@ -15,7 +15,8 @@ class MyApp: Application() {
     }
     override fun onCreate() {
         super.onCreate()
-        ContextProvider.context = this
+//        ContextProvider.context = this
+        ContextProvider.init(this)
         appContext = applicationContext // Initialize context here
         initializeContext(applicationContext)
 

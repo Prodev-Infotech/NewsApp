@@ -446,21 +446,6 @@ fun Route.configureRouting(
                 )
             }
         }
-//        get("/image/{filename}") {
-//            val filename = call.parameters["filename"] ?: return@get call.respond(
-//                HttpStatusCode.BadRequest,
-//                "Missing filename"
-//            )
-//            val file = File("uploads/$filename")
-//
-//            if (!file.exists()) {
-//                call.respond(HttpStatusCode.NotFound, "File not found")
-//                return@get
-//            }
-//
-//            // Respond with the image bytes and proper content type
-//            call.respondFile(file)
-//        }
 
         get("/image/{filename}") {
             val filename = call.parameters["filename"] ?: return@get call.respond(
@@ -484,10 +469,57 @@ fun Route.configureRouting(
             val fileUrl = "${call.request.origin.scheme}://${call.request.host()}:${call.request.port()}/image/$filename"
             call.respond(ApiResponse(true, "Image URL", fileUrl))
         }
+//video post
+        post("/upload/video") {
+            val multipart = call.receiveMultipart()
+            var fileName: String? = null
+            multipart.forEachPart { part ->
+                if (part is PartData.FileItem && part.name == "video") {
+                    fileName = part.originalFileName ?: "unnamed.mp4"
+                    val bytes = part.streamProvider().readBytes()
+                    File("uploads/$fileName").writeBytes(bytes)
+                }
+                part.dispose()
+            }
+            if (fileName != null) {
+                call.respond(ApiResponse(true, "Video uploaded", fileName))
+            } else {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse(false, "No video file received", data = null)
+                )
+            }
+        }
+        get("/video/{filename}") {
+            val filename = call.parameters["filename"] ?: return@get call.respond(
+                HttpStatusCode.BadRequest, "Missing filename"
+            )
+            val uploadDir = File("uploads")
+            val file = File(uploadDir, filename)
+
+            if (!file.exists()) {
+                return@get call.respond(HttpStatusCode.NotFound, "Video not found")
+            }
+
+            val fileUrl = "${call.request.origin.scheme}://${call.request.host()}:${call.request.port()}/video/$filename"
+            call.respond(ApiResponse(true, "Video URL", fileUrl))
+        }
+
 
 
     }
+    get("/video/{filename}") {
+        val filename = call.parameters["filename"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        val file = File("uploads", filename)
+
+        if (!file.exists()) return@get call.respond(HttpStatusCode.NotFound)
+
+        call.respondFile(file)
+    }
     static("/image") {
+        files("uploads")
+    }
+    static("/video") {
         files("uploads")
     }
 

@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,24 +14,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-//import androidx.compose.material.icons.Icons
-//import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -41,21 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import io.github.vinceglb.filekit.coil.AsyncImage
-import io.github.vinceglb.filekit.FileKit
-import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.openFilePicker
-import io.github.vinceglb.filekit.name
-import io.github.vinceglb.filekit.readBytes
 import io.kamel.core.Resource
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
@@ -65,15 +48,14 @@ import newskotlinproject.composeapp.generated.resources.ic_backarrow
 import newskotlinproject.composeapp.generated.resources.ic_edit
 import newskotlinproject.composeapp.generated.resources.ic_user_profile_pl
 import org.jetbrains.compose.resources.painterResource
-import org.kotlin.multiplatform.newsapp.model.CreatePostRequest
+import org.kotlin.multiplatform.newsapp.camera.CameraManager
+import org.kotlin.multiplatform.newsapp.camera.getImageDetailsFromUri
+import org.kotlin.multiplatform.newsapp.imagepicker.PermissionsManager
 import org.kotlin.multiplatform.newsapp.model.EditProfileRequest
-import org.kotlin.multiplatform.newsapp.model.MediaItem
-import org.kotlin.multiplatform.newsapp.model.MediaType
 import org.kotlin.multiplatform.newsapp.model.ResultState
-import org.kotlin.multiplatform.newsapp.model.User
 import org.kotlin.multiplatform.newsapp.model.UserResponseData
+import org.kotlin.multiplatform.newsapp.utils.ImagePickerManager
 import org.kotlin.multiplatform.newsapp.utils.SessionUtil
-import org.kotlin.multiplatform.newsapp.utils.generateId
 import org.kotlin.multiplatform.newsapp.viewmodel.CommunityViewModel
 import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 
@@ -82,20 +64,22 @@ import org.kotlin.multiplatform.newsapp.viewmodel.UserViewModel
 fun EditProfileScreen(
     navController: NavController,
     userViewModel: UserViewModel,
-    viewmodel: CommunityViewModel
+    viewmodel: CommunityViewModel,
+    cameraManager: CameraManager,
+    permissionsManager: PermissionsManager,
 ) {
     val userState by userViewModel.getUserState
 
-    var user by remember { mutableStateOf(UserResponseData("","","","")) }
+    var user by remember { mutableStateOf(UserResponseData("", "", "", "")) }
+    var isSelectPhoto by remember { mutableStateOf(false) }
 
 
-    LaunchedEffect(Unit){
+    LaunchedEffect(Unit) {
         userViewModel.getUserById(SessionUtil.getUserId().toString())
     }
     val coroutineScope = rememberCoroutineScope()
-    var pickedFiles = remember { mutableStateListOf<PlatformFile>() }
 
-    when(userState){
+    when (userState) {
         is ResultState.Loading -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -104,6 +88,7 @@ fun EditProfileScreen(
                 CircularProgressIndicator()
             }
         }
+
         is ResultState.Success -> {
             user = (userState as ResultState.Success).data
         }
@@ -115,10 +100,16 @@ fun EditProfileScreen(
 
         else -> {}
     }
+    var properUri by remember { mutableStateOf<String?>(null) }
+    var selectedImageUri by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val imagePickerManager = remember {
+        ImagePickerManager(cameraManager, permissionsManager)
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
-//            .padding(paddingValues)
     ) {
         Column(
             modifier = Modifier
@@ -161,28 +152,52 @@ fun EditProfileScreen(
                         .clip(CircleShape)
                         .background(Color.Gray)
                         .clickable {
-                            coroutineScope.launch {
-                                val files = FileKit.openFilePicker(
-                                    type = FileKitType.Image
-                                )
-                                files?.let { file ->
-                                    pickedFiles.clear()
-                                    pickedFiles.add(file)
-                                }
-                            }
+                            isSelectPhoto = true
                         },
                     contentAlignment = Alignment.Center
                 ) {
 
-                    val file = pickedFiles.firstOrNull()
-                    if (file != null) {
-                        AsyncImage(
-                            file = file,
-                            contentDescription = file.name,
-                            modifier = Modifier.fillMaxSize()
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
+                    if (selectedImageUri != null) {
+                        selectedImageUri?.let { file ->
+                            println("Selected file:-$file")// Convert file path to proper URI format
+                            properUri = if (file.startsWith("/")) {
+                                "file://$file"
+                            } else {
+                                file
+                            }
+                            properUri?.let { uri ->
+                                val imageResource = asyncPainterResource(uri)
+
+                                KamelImage(
+                                    resource = { imageResource },
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize()
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop,
+                                    onLoading = { println("Loading...") },
+                                    onFailure = { println("Failed to load image: ${it.message}") }
+                                )
+                            }
+
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                        // Error message
+                        errorMessage?.let { error ->
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+
+
+                        // Loading indicator
+                        if (isLoading) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
                     } else {
                         val imageResource = user.profileImage?.let { asyncPainterResource(it) }
 
@@ -223,15 +238,7 @@ fun EditProfileScreen(
                         .background(Color.White, CircleShape)
                         .border(1.dp, Color.Gray, CircleShape)
                         .clickable {
-                            coroutineScope.launch {
-                                val files = FileKit.openFilePicker(
-                                    type = FileKitType.Image
-                                )
-                                files?.let { file ->
-                                    pickedFiles.clear()
-                                    pickedFiles.add(file)
-                                }
-                            }
+                            isSelectPhoto = true
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -258,10 +265,17 @@ fun EditProfileScreen(
 
             Button(
                 onClick = {
-                    coroutineScope.launch {
-                        pickedFiles.forEach { file ->
-                            val bytes = file.readBytes() // ✅ This works in KMP
-                            viewmodel.uploadImage(bytes, file.name)
+                    val uriString = properUri.toString()
+                    properUri?.let { uri ->
+                        coroutineScope.launch {
+                            val (name, bytes) = getImageDetailsFromUri(uriString)
+                            println("Name: $name")
+                            println("Size: ${bytes?.size}")
+                            if (bytes != null) {
+                                if (name != null) {
+                                    viewmodel.uploadImage(bytes, name)
+                                }
+                            }
                         }
                     }
                 },
@@ -314,17 +328,12 @@ fun EditProfileScreen(
                 is ResultState.Success -> {
                     val imageUrl = downloadState.data
                     LaunchedEffect(key1 = imageUrl) {
-                        println("Upload successful: $imageUrl")
-                        println("image url:-->$imageUrl")
-
-                        // ✅ Update user profile image URL
                         user = user.copy(profileImage = imageUrl)
 
                         val request = EditProfileRequest(
                             name = user.name,
-                            profileImageUrl = user.profileImage // ✅ Now contains the updated image URL
+                            profileImageUrl = user.profileImage
                         )
-
                         userViewModel.editProfile(user.id, request)
                     }
                 }
@@ -340,11 +349,12 @@ fun EditProfileScreen(
                 is ResultState.Loading -> CircularProgressIndicator()
                 is ResultState.Success -> {
                     println("Post created: ${(postState as ResultState.Success).data}")
-                val postResult = (postState as ResultState.Success).data
-                LaunchedEffect(postResult) {
-                    println("Post created: $postResult")
-                    navController.navigateUp()
-                }
+                    val postResult = (postState as ResultState.Success).data
+                    LaunchedEffect(postResult) {
+                        println("Post created: $postResult")
+                        navController.navigateUp()
+                        userViewModel.resetUpdateProfileState()
+                    }
                 }
 
                 is ResultState.Error -> {
@@ -352,6 +362,21 @@ fun EditProfileScreen(
                 }
 
                 else -> {}
+            }
+            LaunchedEffect(isSelectPhoto) {
+                if (isSelectPhoto) {
+                    val result = imagePickerManager.showImagePicker()
+                    isLoading = false
+                    isSelectPhoto = false
+
+                    when {
+                        result.error != null -> errorMessage = result.error
+                        result.isCancelled -> { /* Handle cancellation */
+                        }
+
+                        result.imageUri != null -> selectedImageUri = result.imageUri
+                    }
+                }
             }
 
         }

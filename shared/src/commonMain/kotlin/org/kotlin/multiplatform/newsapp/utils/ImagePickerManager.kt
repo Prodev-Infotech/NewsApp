@@ -6,6 +6,14 @@ import org.kotlin.multiplatform.newsapp.imagepicker.PermissionStatus
 import org.kotlin.multiplatform.newsapp.imagepicker.PermissionType
 import org.kotlin.multiplatform.newsapp.imagepicker.PermissionsManager
 
+data class VideoFile(
+    val path: String,
+    val name: String,
+    val size: Long,
+    val mimeType: String,
+    val duration: Long? = null
+)
+
 class ImagePickerManager(
     private val cameraManager: CameraManager,
     private val permissionsManager: PermissionsManager
@@ -54,9 +62,11 @@ suspend fun takePhoto(): CameraResult {
         val galleryGranted = results[PermissionType.GALLERY] == PermissionStatus.GRANTED
 
         if (!cameraGranted && !galleryGranted) {
+            println("Picker Permissions denied")
             return CameraResult(error = "Camera and Gallery permissions denied")
         }
 
         return cameraManager.showImagePicker()
     }
+
 }
